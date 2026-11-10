@@ -46,4 +46,4 @@ Open `index.html` through any static server, for example `python3 -m http.server
 
 Company, logo, clients, people and titles, proposal entries and links, schedule data, and every rate, fee and price. Any resemblance to real organizations is coincidental. This is a demonstration of the workflow, not a pricing reference.
 
-Built by Cory Zavod.
+Built by Corien Zavod.
