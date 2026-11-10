@@ -1,0 +1,792 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<script>/* Site shim: the Claude artifact viewer provided window.claude.use("downloads"); on this site use normal browser downloads. */
+window.claude=window.claude||{};window.claude.use=async function(n){if(n==="downloads")return{save:async function(o){var u=URL.createObjectURL(o.data),a=document.createElement("a");a.href=u;a.download=o.filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove()},1500)}};return null};</script>
+
+<meta charset="utf-8">
+<title>Proposal Timeline Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: builder &#x2014; header, import strip, three input cards (project / study / other deliverables), full-width Gantt preview with warnings and export bar */
+:root{
+  --bg:#F6FAFA; --surface:#ffffff; --fg:#16222B; --muted:#5A6872; --line:#DBE3E8; --soft:#EEF5F6;
+  --navy:#0C273A; --purple:#196972; --pink:#F4B782; --chip:#E9F5F6;
+  --ok:#1f6b4a; --warn-bg:#fff4dc; --warn-ink:#7a5000; --note-bg:#eef0fb; --note-ink:#2d3570;
+  --display:"Sora",ui-sans-serif,system-ui,sans-serif; --body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111C24; --surface:#1A2933; --fg:#EBF1F5; --muted:#A6B6C2; --line:#2D404D; --soft:#232140; --navy:#C6E1F5; --purple:#A4E7EF; --chip:#253947;
+  --ok:#8fe0b6; --warn-bg:#3a2d10; --warn-ink:#f4cf7a; --note-bg:#1f2442; --note-ink:#c3cbff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111C24; --surface:#1A2933; --fg:#EBF1F5; --muted:#A6B6C2; --line:#2D404D; --soft:#232140; --navy:#C6E1F5; --purple:#A4E7EF; --chip:#253947;
+  --ok:#8fe0b6; --warn-bg:#3a2d10; --warn-ink:#f4cf7a; --note-bg:#1f2442; --note-ink:#c3cbff; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:22px 60px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:22px}
+h1,h2,h3{font-family:var(--display);color:var(--navy);margin:0;font-weight:600;text-wrap:balance}
+h1{font-size:clamp(1.5rem,3vw,2rem)} h2{font-size:1.1rem} h3{font-size:.95rem}
+header{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--pink);padding-bottom:16px}
+.hl{display:grid;gap:6px}
+.logo{background:#fff;border-radius:8px;padding:7px 11px;line-height:0;justify-self:start}
+.logo img{height:32px;width:auto}
+.eyebrow{font:500 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--purple)}
+.lede{margin:0;color:var(--muted);max-width:72ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.f{display:grid;gap:4px}
+.f label,.lab{font:500 .72rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.f .h{font-size:.82rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,select,textarea{font:15px var(--body);padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+textarea{min-height:84px;font:12.5px/1.45 var(--mono)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.seg button{font:600 .82rem var(--body);border:0;background:none;color:var(--muted);padding:5px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--purple);color:#fff}
+.tog{display:flex;align-items:center;gap:8px;font-size:.93rem}
+.tog input{width:auto}
+.btn{font:600 .88rem var(--body);border:0;background:var(--purple);color:#fff;border-radius:999px;padding:7px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--purple);border:1px solid var(--purple)}
+.btn:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.dl{display:grid;gap:6px}
+.dlr{display:grid;grid-template-columns:auto minmax(0,1fr) 92px 64px 132px 64px;gap:6px 8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.dlr:first-child{border-top:0}
+.dlr .nm{font-size:.92rem;min-width:0}
+.dlr.off .nm{color:var(--muted)}
+.dlr.off select,.dlr.off input[type=number]{opacity:.45}
+.dlx{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;color:var(--muted)}
+.dlx input{width:auto}
+.dlx input[type=number]{width:64px}
+.dlh{font:500 .68rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.pv{display:grid;gap:12px}
+.pvh{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.gwrap{overflow-x:auto;background:#ffffff;border-radius:10px;border:1px solid var(--line);padding:14px}
+.msgs{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.msgs li{border-radius:8px;padding:8px 12px;font-size:.92rem}
+.msgs li.w{background:var(--warn-bg);color:var(--warn-ink)}
+.msgs li.n{background:var(--note-bg);color:var(--note-ink)}
+.status{font-size:.88rem;color:var(--ok)}
+.err{font-size:.88rem;color:var(--warn-ink)}
+.chip{font:500 .72rem var(--mono);background:var(--chip);color:var(--purple);border-radius:999px;padding:3px 10px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.choose{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.choose button{display:grid;gap:4px;text-align:left;font:15px/1.45 var(--body);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.choose button b{font:600 1rem var(--display);color:var(--navy)}
+.choose button span{color:var(--muted);font-size:.9rem}
+.choose button[aria-pressed="true"]{border:2px solid var(--purple);background:var(--chip)}
+.tblz{overflow-x:auto}
+.zt{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.zt th{font:500 .68rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 6px}
+.zt td{padding:4px 6px;border-top:1px solid var(--line)}
+.zt td.c{color:var(--muted);white-space:nowrap}
+.zt input{min-width:70px}
+.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1rem}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(255,255,255,.6)}
+.seg button[data-brush="erase"][aria-pressed="true"]{background:#879299;color:#fff}
+.tg{display:grid;gap:6px}
+.tgh{font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--purple)}
+.tbar{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between}
+.btn.sm{padding:4px 12px;font-size:.82rem}
+.manual{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--note-bg);color:var(--note-ink);border-radius:8px;padding:8px 12px;font-size:.92rem}
+#gantt td.gc{cursor:crosshair;user-select:none;touch-action:none}
+#gantt.mv td.gc{cursor:default}
+#gantt td.gc:hover{outline:2px solid #F4B782;outline-offset:-2px}
+#gantt .rl{display:flex;align-items:center;gap:4px;justify-content:space-between}
+#gantt .rlt{outline:none;border-radius:3px;padding:1px 2px;min-width:40px;cursor:text}
+#gantt .rlt:focus{background:#fff;box-shadow:0 0 0 2px #F4B782}
+#gantt .rc{display:flex;gap:1px;opacity:0;transition:opacity .15s}
+#gantt tr:hover .rc,#gantt .rc:focus-within{opacity:1}
+#gantt .rc button{border:0;background:none;color:#5A6872;font-size:9px;cursor:pointer;padding:1px 2px}
+#gantt .rc button:hover{color:#196972}
+#gantt input.ce{width:100%;font:9px Arial,sans-serif;padding:1px;border:1px solid #F4B782;border-radius:2px;background:#fff;color:#16222B}
+@media (max-width:640px){.dlr{grid-template-columns:auto minmax(0,1fr) 84px 56px}.dlr .ph,.dlr .st,.dlh.ph,.dlh.st{display:none}.two{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="hl">
+    <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCAzMDAgNjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iQWNtZSBIRiBsb2dvIj48cmVjdCB4PSIyIiB5PSI4IiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMiIgZmlsbD0iIzFGOEE5OSIvPjxwYXRoIGQ9Ik0xNCA0MiBMMjYgMTQgTDM4IDQyIE0xOSAzNCBIMzMiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSI2MiIgeT0iMzEiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEwMzI0QSI+QWNtZSBIRjwvdGV4dD48dGV4dCB4PSI2MyIgeT0iNTAiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjIuMiIgZmlsbD0iIzFGOEE5OSI+SFVNQU4gRkFDVE9SUzwvdGV4dD48L3N2Zz4=" alt="Acme HF"></div>
+    <div class="eyebrow">Proposal tools &#xb7; Timeline</div>
+    <h1>Proposal Timeline Builder</h1>
+    <p class="lede">Builds the estimated timeline for a Word SOW or PowerPoint proposal. Paste the Comm Ops answers to fill it in, adjust anything below, then copy the table or download the slide.</p>
+  </div>
+  <span class="chip" id="srcchip">Example project loaded</span>
+</header>
+
+<section class="card" aria-labelledby="h-start">
+  <h2 id="h-start">How do you want to start?</h2>
+  <div class="choose" role="group" aria-label="Start option">
+    <button type="button" data-start="proposal"><b>A &#xb7; From a proposal</b><span>Paste the Comm Ops answers. Study days, pilot, IRB, recruitment, dates and deliverables come in automatically.</span></button>
+    <button type="button" data-start="scratch"><b>B &#xb7; From scratch</b><span>No proposal yet. Enter the user groups and session lengths and the tool works out the study days, then pick the deliverables.</span></button>
+  </div>
+</section>
+
+<section class="card" id="importCard">
+  <div class="pvh"><h2>Import from the Comm Ops intake</h2><span class="status" id="impmsg" aria-live="polite"></span></div>
+  <div class="f"><label for="imp">Paste the Comm Ops "final answers" text (it ends with a TIMELINE-DATA line)</label>
+  <textarea id="imp" placeholder="ACME HF PROPOSAL INTAKE &#x2014; FINAL (SME + COMMERCIAL OPS) &#x2026;&#10;TIMELINE-DATA: &#x2026;"></textarea></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="doimp" type="button">Import</button><button class="btn ghost" id="reset" type="button">Clear</button></div>
+</section>
+
+<div class="grid3">
+  <section class="card" aria-labelledby="h-p">
+    <h2 id="h-p">Project</h2>
+    <div class="f"><span class="lab">Show the timeline in</span><div class="seg" role="group" aria-label="Timeline units"><button type="button" data-mode="relative">Relative weeks</button><button type="button" data-mode="dates">Calendar dates</button></div></div>
+    <div class="two" id="datesrow"><div class="f"><label for="startDate">Project start</label><input type="date" id="startDate" data-k="startDate"></div>
+      <div class="f"><label for="location">Study location (holidays)</label><select id="location" data-k="location"><option>US</option><option>UK</option><option>EU</option><option value="Multiple / other">US + UK</option></select></div></div>
+    <div class="two" id="relrow"><div class="f"><label for="targetWeek">Target study conduct start (week)</label><input type="number" min="1" id="targetWeek" data-k="targetWeek" placeholder="Not set"></div>
+      <div class="f"><label for="deadlineWeek">Deadline week</label><input type="number" min="1" id="deadlineWeek" data-k="deadlineWeek" placeholder="Not set"></div></div>
+    <div class="two" id="daterow2"><div class="f"><label for="targetDate">Target study conduct start</label><input type="date" id="targetDate" data-k="targetDate"></div>
+      <div class="f"><label for="deadlineDate">Deadline</label><input type="date" id="deadlineDate" data-k="deadlineDate"></div></div>
+    <div class="f"><label for="review">Client review per document (weeks)</label><input type="number" min="0" id="review" data-k="review"><span class="h">Added after each document draft as one review period.</span></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-s">
+    <div class="pvh"><h2 id="h-s">Study</h2><label class="tog"><input type="checkbox" id="s_on" data-s="on"> Includes a study</label></div>
+    <div id="studyBox" style="display:grid;gap:12px">
+      <div class="two"><div class="f"><label for="s_type">Study type</label><select id="s_type" data-s="type"><option>Early Formative</option><option>Later Formative</option><option>Validation / Summative</option></select></div>
+        <div class="f"><label for="s_days">Study days (from calculator)</label><input type="number" min="1" id="s_days" data-s="studyDays"></div></div>
+      <div class="two"><div class="f"><label class="tog" style="text-transform:none;font:15px var(--body);color:var(--fg)"><input type="checkbox" id="s_rec" data-s="recruit"> Acme HF recruitment in quote</label></div>
+        <div class="f"><label for="s_recw">Recruitment weeks</label><input type="number" min="1" id="s_recw" data-s="recruitWeeks"><span class="h">After 1 week of kickoff / screener sign-off.</span></div></div>
+      <div class="two"><div class="f"><label for="s_prep">Study prep weeks</label><input type="number" min="1" id="s_prep" data-s="prepWeeks"><span class="h">Runs alongside recruitment.</span></div>
+        <div class="f"><label for="s_irb">IRB</label><select id="s_irb" data-s="irb"><option>None</option><option>Expedited</option><option value="Full Convened">Full convened</option></select><span class="h" id="irbh">Expedited 1 wk &#xb7; Full 2 wks, placed just before the first session</span></div></div>
+      <div class="two"><div class="f"><label class="tog" style="text-transform:none;font:15px var(--body);color:var(--fg)"><input type="checkbox" id="s_pilot" data-s="pilot"> Pilot</label></div>
+        <div class="f"><label for="s_pd">Pilot days</label><input type="number" min="0" id="s_pd" data-s="pilotDays"><span class="h">Pilot days + 1 week to update materials.</span></div></div>
+      <div class="two"><div class="f"><label class="tog" style="text-transform:none;font:15px var(--body);color:var(--fg)"><input type="checkbox" id="s_dry" data-s="dry"> Dry run</label></div>
+        <div class="f"><label class="tog" style="text-transform:none;font:15px var(--body);color:var(--fg)"><input type="checkbox" id="s_exec" data-s="execPPT"> Executive summary PPT</label></div></div>
+      <div class="two"><div class="f"><label for="s_an">Analysis + draft report (weeks)</label><input type="number" min="1" id="s_an" data-s="analysisWeeks"></div>
+        <div class="f"><label for="s_cr">Client review of draft (weeks)</label><input type="number" min="0" id="s_cr" data-s="clientReview"></div></div>
+    </div>
+  </section>
+
+  <section class="card" id="sizeCard" aria-labelledby="h-z" style="grid-column:1/-1">
+    <div class="pvh"><h2 id="h-z">Study size</h2><span class="lab">Works out study days the same way as the pricing calculator</span></div>
+    <div class="two" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <div class="f"><label for="z_break">Break between sessions</label><select id="z_break" data-z="breakMin"><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="__other">Other (type minutes)&hellip;</option></select><input type="number" min="0" id="z_break_o" data-zo="breakMin" hidden aria-label="Break between sessions (type minutes)" placeholder="minutes"></div>
+      <div class="f"><label for="z_teams">Acme HF teams in parallel</label><select id="z_teams" data-z="teams"><option>1</option><option>2</option><option>3</option><option value="__other">Other (type number)&hellip;</option></select><input type="number" min="1" id="z_teams_o" data-zo="teams" hidden aria-label="Acme HF teams in parallel (type number)" placeholder="number"></div>
+    </div>
+    <div class="tblz"><table class="zt"><thead><tr><th>User group</th><th>Participants needed</th><th>Session length (hrs)</th><th>Pilot sessions</th><th>Recruited (+20%)</th><th>Sessions / day</th><th>Study days</th><th></th></tr></thead><tbody id="zrows"></tbody></table></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn ghost" id="zadd" type="button">Add user group</button><span class="status" id="zsum"></span></div>
+    <span class="h" style="font-size:.85rem;color:var(--muted)">Individual sessions only. For dyads or triads, type the study days into the Study card instead.</span>
+  </section>
+
+  <section class="card" aria-labelledby="h-d" style="grid-column:1/-1">
+    <div class="pvh"><h2 id="h-d">Other deliverables</h2><span class="lab">"Before study prep" starts after kickoff and the study waits for it &#xb7; "With study prep" runs alongside study set-up &#xb7; "After study" starts after the final report</span></div>
+    <div class="dl" id="dl"></div>
+  </section>
+</div>
+
+<section class="card pv" aria-labelledby="h-v">
+  <div class="pvh"><h2 id="h-v">Timeline</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label for="unitSel" style="font-size:.88rem;color:var(--muted);display:flex;align-items:center;gap:6px">Export columns by <select id="unitSel" style="width:auto;padding:4px 8px"><option value="week">Week</option><option value="month">Month (for long timelines)</option></select></label>
+      <button class="btn" id="copyT" type="button">Copy table for Word / PowerPoint</button>
+      <button class="btn ghost" id="dlP" type="button">Download PowerPoint slide</button>
+      <button class="btn ghost" id="dlI" type="button">Download image</button>
+    </div>
+  </div>
+  <span class="status" id="expmsg" aria-live="polite"></span>
+  <div class="tbar">
+    <div class="tg"><span class="tgh" id="tg-cell">Cell Editing</span>
+    <div class="seg" role="group" aria-labelledby="tg-cell">
+      <button type="button" data-brush="bar" title="Scheduled work"><i class="sw" style="background:#196972"></i>Purple</button><button type="button" data-brush="review" title="Client review"><i class="sw" style="background:#B3DBE0"></i>Light purple</button><button type="button" data-brush="erase" title="Clear cells back to gray"><i class="sw" style="background:#E6EAEC;border-color:#B6C0C8"></i>Erase</button><button type="button" data-brush="text">Edit cell text</button><button type="button" data-brush="move" title="Drag a bar to move it; drag its left or right edge to shorten or lengthen it; drag across empty cells to draw a bar">Move / resize bars</button>
+    </div></div>
+    <div class="tg"><span class="tgh" id="tg-table">Table Editing</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" role="group" aria-labelledby="tg-table">
+      <button class="btn ghost sm" id="addRow" type="button">+ Row</button><button class="btn ghost sm" id="addWeek" type="button">+ Week</button><button class="btn ghost sm" id="delWeek" type="button">&#x2212; Week</button><button class="btn ghost sm" id="undo" type="button">Undo</button>
+    </div></div>
+  </div>
+  <p class="h" style="margin:0;font-size:.85rem;color:var(--muted)">Edit the table directly: pick a color (purple = scheduled work, light purple = client review) and click or drag across weeks in a row. Use Edit cell text (or double-click a cell) to type text (milestones like "Deliver Draft Report"). Use Move / resize bars to drag a bar sideways, or drag its left or right edge to shorten or lengthen it (nothing else in the row is deleted). In that mode, dragging across empty cells draws a purple bar. Click a row name to rename it; use &#x25b2; &#x25bc; &#x2715; to move or delete rows.</p>
+  <div class="manual" id="manualBar" hidden><span>Edited by hand. Changes to the inputs above no longer update the table.</span><button class="btn ghost sm" id="rebuild" type="button">Rebuild from inputs</button></div>
+  <ul class="msgs" id="msgs"></ul>
+  <div class="gwrap" id="gantt"></div>
+  <div class="legend"><span><i style="background:#196972"></i>Purple: scheduled work</span><span><i style="background:#B3DBE0"></i>Light purple: client review</span><span><i style="background:#E6EAEC;border:1px solid #C6CFD6"></i>Not scheduled</span></div>
+</section>
+
+<section class="card" aria-labelledby="h-c">
+  <div class="pvh"><h2 id="h-c">Timeline summary for Claude</h2><button class="btn ghost" id="copyS" type="button">Copy summary</button></div>
+  <p class="lede" style="font-size:.9rem">Paste this into the chat when asking Claude to build the SOW or deck, so the document uses the same timeline.</p>
+  <textarea id="sum" readonly style="min-height:160px" aria-label="Timeline summary"></textarea>
+</section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script>
+/* ===== Timeline scheduler (pure) ===== */
+const DELIVS = [
+ {id:"D1", name:"Develop Use-Related Risk Analysis", short:"URRA development", w:[2,3,4], phase:"before", intake:"Use-Related Risk Analysis (develop)"},
+ {id:"D2", name:"Use-Related Risk Analysis Review", short:"URRA review", w:[1,1,2], phase:"before", intake:"Use-Related Risk Analysis (review)"},
+ {id:"D3", name:"Develop a Use Specification", short:"Use specification", w:[2,2,2], phase:"before", intake:"Use Specification"},
+ {id:"D4", name:"Instructions for Use \u2013 expert review / development", short:"IFU review / development", w:[2,3,4], phase:"before", intake:"Instructions for Use (develop or review)", extras:true},
+ {id:"D5", name:"Heuristic Analysis and Expert UI Review", short:"Heuristic analysis", w:[1,1,2], phase:"before", intake:"Heuristic Analysis / Expert UI Review"},
+ {id:"D6", name:"Develop Minimum Viable Commercial Training", short:"Commercial training", w:[2,2,3], phase:"before", intake:"Commercial Training (minimum viable)", beforeStudy:true},
+ {id:"D7", name:"HF Validation Study Documents for FDA Pre-Submission", short:"Pre-Sub study documents", w:[2,3,3], phase:"before", intake:"HF Validation Study Documents for FDA Pre-Submission"},
+ {id:"D9", name:"Support FDA Pre-Submission Meeting", short:"FDA Pre-Sub meeting", w:[1,1,1], phase:"presub", intake:"Support FDA Pre-Submission Meeting", noReview:true},
+ {id:"D10", name:"HFE Submission Report \u2013 Version 1 (for Pre-Sub)", short:"HFE report V1", w:[3,4,5], phase:"before", intake:null},
+ {id:"D11", name:"HFE Submission Report \u2013 Version 2 (after validation)", short:"HFE report V2", w:[3,3,3], phase:"after", intake:null},
+ {id:"D12", name:"FDA HFE Submission Report (single full version)", short:"HFE submission report", w:[4,5,6], phase:"after", intake:"Human Factors Engineering Submission Report"},
+ {id:"D13", name:"Preparation of an FDA-compliant HF SOP", short:"FDA HF SOP", w:[2,2,3], phase:"before", intake:"FDA-compliant Human Factors SOP"},
+ {id:"D14", name:"HF SOP for IEC 62366-1", short:"IEC 62366-1 SOP", w:[2,2,3], phase:"before", intake:"HF SOP for IEC 62366-1 / IEC 60601-1-6"},
+ {id:"D15", name:"IEC 62366-1 Usability Engineering File", short:"Usability Engineering File", w:[2,2,3], phase:"after", intake:"IEC 62366-1 / 60601-1-6 Usability Engineering File"},
+ {id:"D16", name:"Gap Analysis (EU MDR / IEC 62366-1)", short:"Gap analysis", w:[1,2,2], phase:"before", intake:"EU MDR / IEC 62366-1 Gap Analysis"},
+ {id:"D17", name:"Develop a User Interface Evaluation Plan", short:"UI evaluation plan", w:[2,2,3], phase:"before", intake:"User Interface Evaluation Plan"}
+];
+const SIZES = ["Small","Medium","Large"];
+
+function defaultState(){
+  return {
+    client:"", project:"", title:"Estimated Timeline",
+    mode:"relative", startDate:"", location:"US",
+    targetWeek:"", targetDate:"", deadlineWeek:"", deadlineDate:"",
+    review:1,
+    study:{on:true, type:"Later Formative", recruit:true, recruitWeeks:5, prepWeeks:4, irb:"None", irbExp:1, irbFull:2,
+           dry:true, pilot:false, pilotDays:0, studyDays:5, analysisWeeks:3, clientReview:1, finalWeeks:1, execPPT:true},
+    delivs: Object.fromEntries(DELIVS.map(d=>[d.id,{on:false,size:1,weeks:d.w[1],phase:d.phase,start:"",
+      refine:false, verify:false, subToMeeting:1}]))
+  };
+}
+
+/* ---- date helpers (local, no time zone surprises: work in UTC) ---- */
+const DAY = 864e5;
+const ymd = d => d.toISOString().slice(0,10);
+const parseD = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s||""); return m ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3])) : null; };
+const monday = d => new Date(d.getTime() - ((d.getUTCDay()+6)%7)*DAY);
+const nthDow = (y,m,dow,n) => { const f=new Date(Date.UTC(y,m,1)); const off=(dow-f.getUTCDay()+7)%7; return new Date(Date.UTC(y,m,1+off+7*(n-1))); };
+const lastDow = (y,m,dow) => { const l=new Date(Date.UTC(y,m+1,0)); const off=(l.getUTCDay()-dow+7)%7; return new Date(l.getTime()-off*DAY); };
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(Date.UTC(y,mo-1,da));}
+function holidays(y, loc){
+  const U = d => new Date(Date.UTC(y, d[0], d[1]));
+  const us = [["New Year's Day",U([0,1])],["Martin Luther King Jr. Day",nthDow(y,0,1,3)],["Presidents' Day",nthDow(y,1,1,3)],["Memorial Day",lastDow(y,4,1)],
+    ["Juneteenth",U([5,19])],["Independence Day",U([6,4])],["Labor Day",nthDow(y,8,1,1)],["Thanksgiving",nthDow(y,10,4,4)],
+    ["Day after Thanksgiving",new Date(nthDow(y,10,4,4).getTime()+DAY)],["Christmas Day",U([11,25])],["New Year's Eve",U([11,31])]];
+  const e = easter(y);
+  const uk = [["New Year's Day",U([0,1])],["Good Friday",new Date(e.getTime()-2*DAY)],["Easter Monday",new Date(e.getTime()+DAY)],["Early May bank holiday",nthDow(y,4,1,1)],
+    ["Spring bank holiday",lastDow(y,4,1)],["Summer bank holiday",lastDow(y,7,1)],["Christmas Day",U([11,25])],["Boxing Day",U([11,26])]];
+  const eu = [["New Year's Day",U([0,1])],["Good Friday",new Date(e.getTime()-2*DAY)],["Easter Monday",new Date(e.getTime()+DAY)],["Labour Day",U([4,1])],
+    ["Christmas Day",U([11,25])],["St Stephen's / Boxing Day",U([11,26])]];
+  const pick = loc==="UK" ? uk : loc==="EU" ? eu : loc==="US" ? us : [...us, ...uk.map(([n,d])=>[n+" (UK)",d])];
+  return pick.filter(([,d])=>{const w=d.getUTCDay(); return w>0 && w<6;});
+}
+
+/* ---- the scheduler ----
+   Weeks are 1-based. A segment is {s,e,kind,text}; kind: bar | review.  Marks are {w,text}. */
+function schedule(st){
+  const rows = [], warn = [], notes = [];
+  const R = Math.max(0, +st.review || 0);
+  const S = st.study;
+  const add = (label, segs, marks=[], group="") => { rows.push({label, segs, marks, group}); return rows[rows.length-1]; };
+  let firstSession = null, studyEnd = null, finalEnd = null, prepEnd = null, conductStart = null;
+  const kick = add(S.on ? "Kickoff, finalize screeners" : "Kickoff / onboarding", [{s:1,e:1,kind:"bar"}], [], "study");
+  // ---- other deliverables
+  const on = DELIVS.filter(d => st.delivs[d.id] && st.delivs[d.id].on);
+  const ph = d => st.delivs[d.id].phase === "prep" ? "with" : st.delivs[d.id].phase;   // "prep" = legacy "with study prep"
+  let presubMeeting = null; const placed = {};
+  const place = (d, start) => {
+    const c = st.delivs[d.id], w = Math.max(1, +c.weeks||1), s = c.start ? Math.max(1, +c.start) : start;
+    const segs = [{s, e:s+w-1, kind:"bar"}];
+    if (!d.noReview && R) segs.push({s:s+w, e:s+w+R-1, kind:"review", text:"Client review"});
+    const r = add(d.short, segs, [], "deliv"); r.id = d.id; r.end = s + w - 1 + (d.noReview ? 0 : R); placed[d.id] = r;
+    if (d.id === "D7"){ const sub = r.end + 1; r.marks.push({w:sub, text:"Pre-Sub submitted"}); presubMeeting = sub + Math.max(0, +st.delivs.D7.subToMeeting||0); }
+    return r;
+  };
+  // 1) "Before study prep" deliverables start after kickoff; study set-up waits for them (decision 10/2026)
+  let base = 2;
+  for (const d of on.filter(d => ph(d) === "before" && d.id !== "D9")){ const r = place(d, 2); base = Math.max(base, r.end + 1); }
+  if (st.delivs.D9 && st.delivs.D9.on){
+    const c = st.delivs.D9;
+    const meet = c.start ? +c.start : presubMeeting || 2 + 3;
+    if (!c.start && !presubMeeting) notes.push("FDA Pre-Sub meeting week assumed; set the start week once FDA schedules the meeting.");
+    add("FDA Pre-Sub meeting", [{s:Math.max(1,meet-1),e:Math.max(1,meet-1),kind:"bar",text:"Slides"},{s:meet,e:meet,kind:"bar",text:"Meeting"},{s:meet+1,e:meet+1,kind:"bar",text:"Minutes"}], [], "deliv");
+    base = Math.max(base, meet + 2);
+  }
+  if (S.on && base > 2) notes.push(`Study set-up starts in week ${base}, after the deliverables marked "Before study prep"${st.delivs.D9 && st.delivs.D9.on ? " and the FDA Pre-Sub meeting" : ""}.`);
+  if (S.on){
+    const irbW = S.irb==="Expedited" ? +S.irbExp||0 : S.irb==="Full Convened" || S.irb==="Full" ? +S.irbFull||0 : 0;
+    // IRB review sits at the end of set-up: the last 1-2 weeks before the first session (decision 10/2026)
+    let recS = base;
+    const recW = S.recruit ? Math.max(1, +S.recruitWeeks||0) : 0;
+    const prepW = Math.max(1, +S.prepWeeks||0);
+    let prepS = base;
+    let ready = Math.max(S.recruit ? recS + recW : 0, prepS + prepW);           // first week after recruitment and prep both finish
+    const pilotW = S.pilot && +S.pilotDays > 0 ? Math.ceil(+S.pilotDays/5) : 0;
+    const pilotBlock = pilotW ? pilotW + 1 : 0;                                  // pilot days + 1 week to update materials
+    let fs = ready;                                                             // first session week (pilot or study)
+    // firm target study week: push set-up later (kickoff stays in week 1), or warn if it can't be met
+    const T = targetWeek(st);
+    if (T){
+      const wantConduct = T, earliestConduct = ready + pilotBlock;
+      if (earliestConduct > wantConduct) warn.push(`The target study week (week ${T}) is too early: the earliest study conduct is week ${earliestConduct}. Shorten recruitment or prep, or move the target.`);
+      else if (earliestConduct < wantConduct){ const shift = wantConduct - earliestConduct; recS += shift; prepS += shift; ready += shift; notes.push(`Set-up shifted ${shift} week${shift>1?"s":""} later to meet the target study week; the weeks in between are idle.`); }
+      fs = ready;
+    }
+    // recruitment and prep both run up to the week before the first session (they overlap; O2)
+    if (S.recruit) recS = Math.max(recS, fs - recW);
+    prepS = Math.max(base, fs - prepW);
+    if (irbW) add(`IRB review (${S.irb === "Expedited" ? "expedited" : "full convened"})`, [{s:Math.max(base, fs - irbW),e:fs - 1,kind:"bar"}], [], "study");
+    if (S.recruit) add("Recruiting", [{s:recS,e:recS+recW-1,kind:"bar"}], [], "study");
+    const prep = add("Study prep", [{s:prepS,e:prepS+prepW-1,kind:"bar"}], S.dry ? [{w:prepS+prepW-1,text:"Dry run"}] : [], "study");
+    prepEnd = prepS + prepW - 1;
+    if (pilotW){ add("Pilot", [{s:fs,e:fs+pilotW-1,kind:"bar"},{s:fs+pilotW,e:fs+pilotW,kind:"bar",text:"Update"}], [], "study"); }
+    conductStart = fs + pilotBlock;
+    const cW = Math.max(1, Math.ceil((+S.studyDays||1)/5));
+    const conductRow = add("Study conduct", [{s:conductStart,e:conductStart+cW-1,kind:"bar"}], [], "study");
+    firstSession = fs; studyEnd = conductStart + cW - 1;
+    const tbf = fs - 4;
+    if (tbf >= 1) notes.push(`Time Booking Form: study days must be booked by week ${tbf} (4 weeks before the first session).`); else warn.push("Study sessions start less than 4 weeks after kickoff, so the Time Booking Form can't be signed 4 weeks ahead.");
+    const aW = Math.max(1, +S.analysisWeeks||3), cr = Math.max(0, +S.clientReview||0), fW = Math.max(1, +S.finalWeeks||1);
+    const aS = studyEnd + 1, draft = aS + aW - 1, fS = draft + cr + 1, fin = fS + fW - 1;
+    const segs = [{s:aS,e:draft,kind:"bar"}];
+    if (cr) segs.push({s:draft+1,e:draft+cr,kind:"review",text:"Client review"});
+    segs.push({s:fS,e:fin,kind:"bar"});
+    const marks = [{w:draft,text:"Deliver Draft Report"},{w:fin,text:"Deliver Final Report"}];
+    let end = fin;
+    if (S.execPPT){ segs.push({s:fin+1,e:fin+1,kind:"bar",text:"Exec summary"}); end = fin+1; }
+    add("Analysis / Reporting", segs, marks, "study");
+    finalEnd = fin;
+  }
+  // 2) "With study prep" deliverables run alongside study set-up; 3) "After study" ones start after the final report
+  for (const d of on.filter(d => ph(d) === "with" && d.id !== "D9")) place(d, base);
+  if (placed.D4){
+    const c = st.delivs.D4, r = placed.D4;
+    let after = S.on ? finalEnd + 1 : r.end + 1;
+    if (c.refine){ r.segs.push({s:after,e:after,kind:"bar",text:"Refine"}); after += 1; }
+    if (c.verify){ r.segs.push({s:after,e:after+1,kind:"bar",text:"Verify"}); after += 2; }
+  }
+  for (const d of on) if (d.beforeStudy && firstSession && placed[d.id] && placed[d.id].end >= firstSession) warn.push(`${d.short} finishes in week ${placed[d.id].end}, after the first study session (week ${firstSession}). Start it earlier or shorten it.`);
+  const afterBase = () => S.on ? finalEnd + 1 : Math.max(2, ...rows.flatMap(r => r.segs.map(s => s.e + 1)));
+  let ab = null;
+  for (const d of on.filter(d => ph(d) === "after" && d.id !== "D9")){
+    if (ab === null) ab = afterBase();
+    place(d, ab);
+  }
+  const weeks = Math.max(1, ...rows.flatMap(r => r.segs.map(s => s.e)), ...rows.flatMap(r => r.marks.map(m => m.w)));
+  const D = deadlineWeek(st);
+  if (D && weeks > D) warn.push(`The plan runs to week ${weeks}, past the deadline (week ${D}).`);
+  // ---- dates + holidays
+  let labels = null, hol = [];
+  const start = st.mode === "dates" ? parseD(st.startDate) : null;
+  if (start){
+    const w1 = monday(start);
+    labels = Array.from({length:weeks}, (_, i) => new Date(w1.getTime() + i*7*DAY));
+    const end = new Date(w1.getTime() + weeks*7*DAY);
+    const years = [...new Set([w1.getUTCFullYear(), end.getUTCFullYear()])];
+    for (const y of years) for (const [n, d] of holidays(y, st.location)){
+      if (d >= w1 && d < end){ const wk = Math.floor((d - w1)/(7*DAY)) + 1; hol.push({w:wk, name:n, date:ymd(d)}); }
+    }
+    const hot = new Set(rows.filter(r => /Study conduct|Pilot/.test(r.label)).flatMap(r => r.segs.flatMap(s => Array.from({length:s.e-s.s+1}, (_, i) => s.s+i))));
+    for (const h of hol) if (hot.has(h.w)) warn.push(`${h.name} (${h.date}) falls in a study week (week ${h.w}). Plan sessions around it.`);
+    const xmas = hol.filter(h => /Christmas|New Year/.test(h.name));
+    if (xmas.length) notes.push("The plan crosses the Christmas / New Year period. Expect slower client reviews and recruiting.");
+  } else if (st.mode === "dates") notes.push("Add a start date to show calendar dates and check holidays.");
+  return {rows, weeks, labels, hol, warn, notes, firstSession, studyEnd};
+}
+function targetWeek(st){
+  if (st.mode === "dates"){ const s = parseD(st.startDate), t = parseD(st.targetDate); if (s && t) return Math.floor((monday(t) - monday(s))/(7*DAY)) + 1; return null; }
+  return +st.targetWeek > 0 ? +st.targetWeek : null;
+}
+function deadlineWeek(st){
+  if (st.mode === "dates"){ const s = parseD(st.startDate), t = parseD(st.deadlineDate); if (s && t) return Math.floor((monday(t) - monday(s))/(7*DAY)) + 1; return null; }
+  return +st.deadlineWeek > 0 ? +st.deadlineWeek : null;
+}
+
+
+/* ===== app ===== */
+const KEY = "cm_timeline_builder_v1";
+const TITLE = "Estimated Timeline";
+const C = {head:"196972", headTxt:"FFFFFF", label:"E6EAEC", empty:"E6EAEC", bar:"196972", review:"B3DBE0", light:"8E6BB8", txt:"16222B", grid:"FFFFFF"};
+function blankSize(){ return {breakMin:30, teams:1, groups:[{name:"", n:"", sh:"1", pn:"0"}]}; }
+function sizeCalc(z){
+  const b = (+z.breakMin||0)/60, rows = (z.groups||[]).map(g => {
+    const n = +g.n||0, sh = Math.max(0.25, +g.sh||1), pn = +g.pn||0;
+    const priced = n ? Math.ceil(n*1.2 - 1e-9) : 0, ppd = Math.max(1, Math.floor((6.5 + b)/(sh + b) + 1e-6));
+    const pp = pn ? Math.ceil(pn*1.2 - 1e-9) : 0;
+    return {priced, ppd, days: priced ? Math.ceil(priced/ppd) : 0, pdays: pp ? Math.ceil(pp/ppd) : 0};
+  });
+  const teams = Math.max(1, +z.teams||1), sd = rows.reduce((a,r)=>a+r.days,0), pd = rows.reduce((a,r)=>a+r.pdays,0);
+  return {rows, studyDays: Math.ceil(sd/teams), pilotDays: pd};
+}
+function renderSize(){
+  const z = st.size || (st.size = blankSize()), c = sizeCalc(z);
+  for (const [k, id] of [["breakMin", "z_break"], ["teams", "z_teams"]]){ const sel = $(id), box = $(id + "_o"), inList = [...sel.options].some(o => o.value !== "__other" && o.value === String(z[k]));
+    if (z[k + "_c"] || !inList){ sel.value = "__other"; box.hidden = false; if (document.activeElement !== box) box.value = z[k] ?? ""; } else { sel.value = z[k]; box.hidden = true; } }
+  $("zrows").innerHTML = z.groups.map((g,i) => `<tr><td><input aria-label="User group" data-zg="${i}" data-f="name" value="${esc(g.name)}" placeholder="e.g., Nurses"></td>
+    <td><input type="number" min="0" aria-label="Participants needed" data-zg="${i}" data-f="n" value="${esc(g.n)}"></td>
+    <td>${(g._c || !["0.5","1","1.5","2","2.5","3","3.5","4"].includes(String(g.sh))) ? `<span style="display:flex;gap:4px;align-items:center"><input type="number" min="0.25" step="0.25" style="min-width:70px" aria-label="Session length (type hours)" data-zg="${i}" data-f="sh" value="${esc(g.sh)}"><button class="x" type="button" data-zlist="${i}" title="Back to the list" aria-label="Back to the list" style="font-size:.8rem;white-space:nowrap">\u25be List</button></span>` : `<select aria-label="Session length" data-zg="${i}" data-f="sh">${["0.5","1","1.5","2","2.5","3","3.5","4"].map(v=>`<option ${String(g.sh)===v?"selected":""}>${v}</option>`).join("")}<option value="__other">Other (type hours)\u2026</option></select>`}</td>
+    <td><input type="number" min="0" aria-label="Pilot sessions" data-zg="${i}" data-f="pn" value="${esc(g.pn)}"></td>
+    <td class="c">${c.rows[i].priced || "\u2013"}</td><td class="c">${c.rows[i].ppd}</td><td class="c">${c.rows[i].days || "\u2013"}${c.rows[i].pdays ? ` (+${c.rows[i].pdays} pilot)` : ""}</td>
+    <td><button class="x" type="button" data-zdel="${i}" aria-label="Remove group">\u2715</button></td></tr>`).join("");
+  $("zsum").textContent = `${c.studyDays} study day${c.studyDays===1?"":"s"}${c.pilotDays ? ` \u00b7 ${c.pilotDays} pilot day${c.pilotDays===1?"":"s"}` : ""}${+z.teams>1 ? ` (${z.teams} teams)` : ""}`;
+}
+function applyStart(){
+  const scratch = st.start === "scratch";
+  document.querySelectorAll("[data-start]").forEach(b => b.setAttribute("aria-pressed", b.dataset.start === (st.start||"proposal")));
+  $("importCard").hidden = scratch; $("sizeCard").hidden = !scratch;
+  $("s_days").disabled = scratch; $("s_pd").disabled = scratch;
+  document.querySelector('label[for="s_days"]').textContent = scratch ? "Study days (from study size)" : "Study days (from calculator)";
+  if (scratch){ const c = sizeCalc(st.size || (st.size = blankSize())); st.study.studyDays = c.studyDays || 1; st.study.pilotDays = c.pilotDays; if (c.pilotDays) st.study.pilot = true; }
+}
+function example(){ const s = defaultState(); 
+  Object.assign(s.study, {type:"Later Formative", studyDays:8, pilot:true, pilotDays:2});
+  s.delivs.D2.on = true; s.delivs.D3.on = true; s.delivs.D12.on = true; s.delivs.D12.weeks = 5; return s; }
+let st, src = "Example project loaded";
+try { const j = JSON.parse(localStorage.getItem(KEY) || "null"); if (j && j.st) { st = j.st; src = j.src || "Saved in this browser"; } } catch (e) {}
+if (!st) st = example();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({st, src})); } catch (e) {} };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtD = d => d.toLocaleDateString("en-US", {month:"short", day:"numeric", timeZone:"UTC"});
+const shortD = d => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;   // 11/16, used when week columns are narrow
+
+function bindInputs(){
+  document.querySelectorAll("[data-k]").forEach(el => { el.value = st[el.dataset.k] ?? ""; });
+  document.querySelectorAll("[data-s]").forEach(el => { const v = st.study[el.dataset.s]; if (el.type === "checkbox") el.checked = !!v; else el.value = v ?? ""; });
+  document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === st.mode));
+  $("datesrow").hidden = st.mode !== "dates"; $("daterow2").hidden = st.mode !== "dates"; $("relrow").hidden = st.mode === "dates";
+  $("studyBox").style.opacity = st.study.on ? 1 : .45;
+  $("srcchip").textContent = src;
+}
+function renderDelivs(){
+  $("dl").innerHTML = `<div class="dlr" style="border-top:0"><span></span><span class="dlh">Deliverable</span><span class="dlh">Size</span><span class="dlh">Weeks</span><span class="dlh ph">When</span><span class="dlh st">Start wk</span></div>` +
+  DELIVS.map(d => { const c = st.delivs[d.id];
+    const ex = d.id === "D4" ? `<div class="dlx"><label><input type="checkbox" data-d="${d.id}" data-f="refine" ${c.refine?"checked":""}> Refine after study (1 wk)</label><label><input type="checkbox" data-d="${d.id}" data-f="verify" ${c.verify?"checked":""}> IFU verification (2 wks)</label></div>`
+      : d.id === "D7" ? `<div class="dlx"><label>Submission \u2192 FDA meeting (weeks) <input type="number" min="0" data-d="D7" data-f="subToMeeting" value="${c.subToMeeting}"></label></div>`
+      : d.id === "D9" ? `<div class="dlx">Slides the week before, minutes the week after. Placed after the Pre-Sub submission unless you set a start week (the meeting week).</div>` : "";
+    return `<div class="dlr${c.on?"":" off"}"><input type="checkbox" aria-label="Include ${esc(d.name)}" data-d="${d.id}" data-f="on" ${c.on?"checked":""}>
+      <span class="nm">${esc(d.name)}</span>
+      <select aria-label="Size" data-d="${d.id}" data-f="size" ${d.id==="D9"?"disabled":""}>${SIZES.map((s,i)=>`<option value="${i}" ${+c.size===i?"selected":""}>${s} \u00b7 ${d.w[i]}w</option>`).join("")}</select>
+      <input type="number" min="1" aria-label="Weeks" data-d="${d.id}" data-f="weeks" value="${c.weeks}" ${d.id==="D9"?"disabled":""}>
+      <select class="ph" aria-label="When" data-d="${d.id}" data-f="phase" ${d.id==="D9"?"disabled":""}><option value="before" ${c.phase==="before"?"selected":""}>Before study prep</option><option value="prep" ${c.phase==="prep"?"selected":""}>With study prep</option><option value="after" ${c.phase==="after"?"selected":""}>After study</option></select>
+      <input class="st" type="number" min="1" aria-label="Start week" placeholder="Auto" data-d="${d.id}" data-f="start" value="${c.start}">
+      ${ex}</div>`; }).join("");
+}
+let R = null, G = null;
+/* ---- editable grid model: {weeks, rows:[{label, cells:[{k:""|"bar"|"review"|"light", t:"", b:bool}]}]} ---- */
+function gridFromR(r){
+  return {weeks: r.weeks, rows: r.rows.map(row => ({label: row.label, cells: Array.from({length: r.weeks}, (_, i) => {
+    const w = i + 1, seg = row.segs.find(s => w >= s.s && w <= s.e), mk = row.marks.filter(m => m.w === w).map(m => m.text).join(" / ");
+    return {k: seg ? seg.kind : "", t: mk || (seg && w === seg.s ? (seg.text || "") : ""), b: !!mk};
+  })}))};
+}
+function weekInfo(n){
+  const start = st.mode === "dates" ? parseD(st.startDate) : null;
+  if (!start) return {labels: null, hol: []};
+  const w1 = monday(start), labels = Array.from({length: n}, (_, i) => new Date(w1.getTime() + i*7*DAY)), end = new Date(w1.getTime() + n*7*DAY), hol = [];
+  for (const y of [...new Set([w1.getUTCFullYear(), end.getUTCFullYear()])]) for (const [nm, d] of holidays(y, st.location))
+    if (d >= w1 && d < end) hol.push({w: Math.floor((d - w1)/(7*DAY)) + 1, name: nm, date: ymd(d)});
+  return {labels, hol};
+}
+const FILL = k => (k === "bar" || k === "light") ? C.bar : k === "review" ? C.review : C.empty;
+const INK = (k, b) => (k === "bar" || k === "light") ? "FFFFFF" : C.head;
+let UNIT = "week";
+const WPM = 4.345;   // average weeks per month
+function toMonths(g){
+  const M = Math.max(1, Math.ceil(g.weeks / WPM)), w1 = weekInfo(g.weeks).labels;
+  const rank = {bar:3, review:2, light:1, "":0};
+  const labels = w1 ? Array.from({length: M}, (_, m) => new Date(w1[0].getTime() + Math.round(m * WPM + (WPM - 1) / 2) * 7 * DAY)) : null;
+  return {weeks: M, unit: "month", labels, rows: g.rows.map(row => ({label: row.label, cells: Array.from({length: M}, (_, m) => {
+    const cs = row.cells.filter((_, i) => Math.floor(i / WPM) === m);
+    let k = ""; cs.forEach(c => { if (rank[c.k] > rank[k]) k = c.k; });
+    const tc = cs.find(c => c.t && c.b) || cs.find(c => c.t && c.k === k);
+    const cell = {k, t: tc ? tc.t : "", b: !!(tc && tc.b)};
+    // only 1-2 weeks of work in this month (and no label text): show the month as 4 week-parts, filling only the weeks used
+    const used = cs.filter(c => c.k).length;
+    if (used >= 1 && used <= 2 && !cell.t){
+      const n = Math.max(cs.length, 4), p = ["", "", "", ""];
+      cs.forEach((c, j) => { const q = Math.min(3, Math.floor(j * 4 / n)); if (rank[c.k] > rank[p[q]]) p[q] = c.k; });
+      if (p.some(x => !x)) cell.p = p;
+    }
+    return cell;
+  })}))};
+}
+const monthLbl = d => d.toLocaleDateString("en-US", {month:"short", year:"2-digit", timeZone:"UTC"});
+const getX = () => UNIT === "month" ? toMonths(G) : G;
+function gridHTML(g, forCopy, edit){
+  // every week column has the same fixed width; long labels wrap inside the cell instead of widening it
+  let isM = g.unit === "month", wi = isM ? {labels: g.labels, hol: []} : weekInfo(g.weeks), LW = forCopy ? 175 : 180,
+    CW = forCopy ? Math.max(30, Math.min(64, Math.floor((660 - LW) / g.weeks))) : 46, TW = LW + CW * g.weeks,
+    FC = forCopy ? (CW >= 44 ? 11 : 10) : 9, FH = forCopy ? 12 : 11, FL = forCopy ? 12 : 11, RH = forCopy ? 38 : 30, LBL = isM ? "Month" : "Week", dfmt = isM ? monthLbl : fmtD;
+  const CW0 = CW; if (isM) CW = Math.floor(CW / 4) * 4;   // month columns are drawn as 4 week-parts
+  const SUB = isM ? 4 : 1, SW = CW / SUB, TW2 = LW + CW * g.weeks, wcell = `width:${CW}px;min-width:${CW}px;max-width:${CW}px;overflow:hidden;word-wrap:break-word;overflow-wrap:anywhere`;
+  let h = `<table width="${TW2}" style="border-collapse:collapse;font-family:Arial,sans-serif;table-layout:fixed;width:${TW2}px"><colgroup><col width="${LW}" style="width:${LW}px">${`<col width="${SW}" style="width:${SW}px">`.repeat(g.weeks * SUB)}</colgroup>`;
+  h += `<thead><tr><th width="${LW}" style="width:${LW}px;background:#${C.head};color:#fff;border:2px solid #fff;padding:6px 8px;text-align:left;font:700 ${FH}px Arial,sans-serif">${LBL}</th>`;
+  for (let w = 1; w <= g.weeks; w++){
+    const hol = wi.hol.filter(x => x.w === w);
+    h += `<th width="${CW}"${isM ? ` colspan="4"` : ""} style="${wcell};background:#${C.head};color:#fff;border:2px solid #fff;padding:4px 1px;font:700 ${FH}px Arial,sans-serif;text-align:center" title="${esc(hol.map(x=>x.name).join(", "))}">${w}${wi.labels ? `<div style="font:400 ${CW >= 38 ? 9 : 8}px Arial,sans-serif;opacity:.9;white-space:nowrap">${(isM || CW >= 38) ? dfmt(wi.labels[w-1]) : shortD(wi.labels[w-1])}</div>` : ""}${hol.length?`<div style="font:700 9px Arial,sans-serif;color:#F4B782">\u25cf</div>`:""}</th>`;
+  }
+  h += `</tr></thead><tbody>`;
+  g.rows.forEach((row, ri) => {
+    const lab = edit
+      ? `<div class="rl"><span class="rlt" contenteditable="true" spellcheck="false" data-rl="${ri}" aria-label="Row name">${esc(row.label)}</span><span class="rc"><button type="button" data-rmv="${ri}" data-dir="-1" aria-label="Move row up">\u25b2</button><button type="button" data-rmv="${ri}" data-dir="1" aria-label="Move row down">\u25bc</button><button type="button" data-rdel="${ri}" aria-label="Delete row">\u2715</button></span></div>`
+      : esc(row.label);
+    h += `<tr><td width="${LW}" style="width:${LW}px;background:#${C.label};border:2px solid #fff;padding:4px 8px;font:400 ${FL}px Arial,sans-serif;color:#${C.txt};text-align:left">${lab}</td>`;
+    row.cells.forEach((c, i) => {
+      if (c.p){ c.p.forEach(pk => { h += `<td width="${SW}" style="width:${SW}px;min-width:${SW}px;max-width:${SW}px;background:#${FILL(pk)};border:2px solid #${C.grid};padding:3px 0;height:${RH}px;font-size:1px;line-height:1px">&nbsp;</td>`; }); return; }
+      h += `<td width="${CW}"${isM ? ` colspan="4"` : ""}${edit ? ` class="gc" data-r="${ri}" data-w="${i}"` : ""} style="${wcell};background:#${FILL(c.k)};border:2px solid #${C.grid};padding:3px 1px;height:${RH}px;text-align:center;vertical-align:middle;font:${c.b?"700":"400"} ${FC}px Arial,sans-serif;color:#${INK(c.k, c.b)};line-height:1.1">${esc(c.t)}</td>`;
+    });
+    h += `</tr>`;
+  });
+  return h + `</tbody></table>`;
+}
+function summaryText(g){
+  const wi = weekInfo(g.weeks), K = {bar:"", review:" (client review)", light:""};
+  const L = [`TIMELINE: ${TITLE}`];
+  if (st.manual) L.push("Edited by hand in the timeline table.");
+  if (st.start === "scratch" && st.size){ const c = sizeCalc(st.size); L.push("Built from scratch. Study size: " + st.size.groups.filter(x => +x.n).map((x,i) => `${x.name || "Group "+(i+1)} ${x.n} needed (${c.rows[i].priced} recruited) @ ${x.sh} hr`).join("; ") + ` \u2192 ${c.studyDays} study days${c.pilotDays ? ", " + c.pilotDays + " pilot days" : ""}`); }
+  L.push(wi.labels ? `Week 1 starts ${wi.labels[0].toISOString().slice(0,10)}` : "Relative weeks (Week 1 = kickoff week)");
+  for (const row of g.rows){
+    const runs = []; let cur = null;
+    row.cells.forEach((c, i) => { if (c.k && cur && cur.k === c.k && !(c.t && !c.b)) cur.e = i + 1; else { if (cur) runs.push(cur); cur = c.k ? {k: c.k, s: i + 1, e: i + 1, t: c.b ? "" : c.t} : null; } });
+    if (cur) runs.push(cur);
+    const marks = row.cells.map((c, i) => c.b && c.t ? `${c.t} wk ${i+1}` : null).filter(Boolean);
+    L.push(`- ${row.label}: ${runs.map(r => `${r.t ? r.t + ": " : ""}wk ${r.s}${r.e > r.s ? "\u2013" + r.e : ""}${K[r.k]}`).join("; ") || "\u2014"}${marks.length ? " | " + marks.join("; ") : ""}`);
+  }
+  L.push(`Total: ${g.weeks} weeks`);
+  if (!st.manual){ R.warn.forEach(w => L.push("WARNING: " + w)); R.notes.forEach(n => L.push("NOTE: " + n)); }
+  if (wi.hol.length) L.push("Holidays in range: " + wi.hol.map(h => `${h.name} ${h.date} (wk ${h.w})`).join("; "));
+  return L.join("\n");
+}
+function render(){
+  applyStart();
+  bindInputs();
+  if (st.start === "scratch") renderSize();
+  R = schedule(st);
+  G = st.manual || gridFromR(R);
+  $("gantt").innerHTML = gridHTML(G, false, true);
+  $("manualBar").hidden = !st.manual;
+  $("undo").disabled = !HIST.length;
+  document.querySelectorAll("[data-brush]").forEach(b => b.setAttribute("aria-pressed", b.dataset.brush === BRUSH));
+  $("gantt").classList.toggle("mv", BRUSH === "move");
+  const wi = weekInfo(G.weeks);
+  $("msgs").innerHTML = (st.manual ? `<li class="n">These warnings come from the inputs above and may not reflect your hand edits.</li>` : "") +
+    R.warn.map(w => `<li class="w">${esc(w)}</li>`).join("") + R.notes.map(n => `<li class="n">${esc(n)}</li>`).join("") +
+    (G.weeks > 20 ? `<li class="n">This is a long timeline (${G.weeks} weeks). If the export looks cramped, choose "Month" in "Export columns by" above the table.</li>` : "") +
+    (wi.hol.length ? `<li class="n">Holidays in this period (\u25cf in the header): ${esc(wi.hol.map(h => `${h.name} ${fmtD(new Date(h.date+"T00:00:00Z"))}`).join(", "))}</li>` : "");
+  $("sum").value = summaryText(G);
+  save();
+}
+/* ---- direct table editing ---- */
+let BRUSH = "bar", HIST = [], PAINT = null;
+const snapshot = () => { HIST.push(JSON.stringify(st.manual || gridFromR(R))); if (HIST.length > 40) HIST.shift(); };
+const ensureManual = () => { if (!st.manual){ st.manual = JSON.parse(JSON.stringify(G)); src = "Edited by hand"; } return st.manual; };
+function applyBrush(r, w){
+  const m = ensureManual(), c = m.rows[r].cells[w];
+  if (BRUSH === "erase"){ c.k = ""; c.t = ""; c.b = false; }
+  else { c.k = BRUSH; }
+}
+function editText(td){
+  const r = +td.dataset.r, w = +td.dataset.w, cur = G.rows[r].cells[w];
+  td.innerHTML = `<input class="ce" aria-label="Cell text" value="${esc(cur.t)}">`;
+  const inp = td.querySelector("input"); inp.focus(); inp.select();
+  let done = false;
+  const commit = keep => { if (done) return; done = true;
+    if (keep && inp.value !== cur.t){ snapshot(); const c = ensureManual().rows[r].cells[w]; c.t = inp.value.trim(); c.b = !!c.t && (!c.k || firstOfRun(r, w) !== w); }
+    render(); };
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") commit(true); if (e.key === "Escape") commit(false); });
+  inp.addEventListener("blur", () => commit(true));
+}
+function firstOfRun(r, w){ const cells = G.rows[r].cells; let i = w; while (i > 0 && cells[i-1].k && cells[i-1].k === cells[w].k) i--; return i; }
+const gantt = () => $("gantt");
+/* ---- Move / resize bars: drag a bar to move it, or drag its left/right edge to shorten or lengthen it ---- */
+let MOVE = null;
+function runAt(cells, w){ const k = cells[w].k; if (!k) return null; let a = w, b = w; while (a > 0 && cells[a-1].k === k) a--; while (b < cells.length - 1 && cells[b+1].k === k) b++; return {s: a, e: b, k}; }
+function moveZone(td, ev){
+  const r = +td.dataset.r, w = +td.dataset.w, run = runAt(G.rows[r].cells, w); if (!run) return null;
+  const rc = td.getBoundingClientRect(), f = (ev.clientX - rc.left) / rc.width;
+  if (run.s === run.e) return {run, mode: f < .33 ? "left" : f > .67 ? "right" : "move"};
+  if (w === run.e && f > .5) return {run, mode: "right"};
+  if (w === run.s && f < .5) return {run, mode: "left"};
+  return {run, mode: "move"};
+}
+function moveApply(w){
+  const {r, mode, run, w0, base} = MOVE, n = base.length, d = w - w0;
+  if (mode === "draw"){ const cells = base.map(c => ({...c})); for (let i = Math.min(w0, w); i <= Math.max(w0, w); i++) if (!cells[i].k) cells[i] = {k: "bar", t: "", b: false}; st.manual.rows[r].cells = cells; return; }
+  let s = run.s, e = run.e;
+  if (mode === "move"){ const sh = Math.max(-s, Math.min(n - 1 - e, d)); s += sh; e += sh; }
+  else if (mode === "right") e = Math.max(s, Math.min(n - 1, e + d));
+  else s = Math.min(e, Math.max(0, s + d));
+  const cells = base.map(c => ({...c})), blank = () => ({k: "", t: "", b: false});
+  for (let i = run.s; i <= run.e; i++) cells[i] = blank();
+  for (let i = s; i <= e; i++){
+    if (mode === "move") cells[i] = {...base[run.s + (i - s)]};
+    else cells[i] = (i >= run.s && i <= run.e) ? {...base[i]} : {k: run.k, t: "", b: false};
+  }
+  if (mode !== "move"){ const f = base[run.s]; if (f.t && !f.b){ if (run.s !== s) cells[run.s].t = ""; cells[s].t = f.t; cells[s].b = false; } }
+  st.manual.rows[r].cells = cells;
+}
+document.addEventListener("pointerdown", e => {
+  const td = e.target.closest("td.gc"); if (!td || !gantt().contains(td)) return;
+  try { if (e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) e.target.releasePointerCapture(e.pointerId); } catch (_) {}   // touch/pen: keep move events flowing after the table redraws
+  if (BRUSH === "move"){ e.preventDefault(); const z = moveZone(td, e);
+    if (!z){ snapshot(); ensureManual(); const r0 = +td.dataset.r, w0 = +td.dataset.w;   // empty cell: drag across weeks to draw a purple bar
+      MOVE = {r: r0, mode: "draw", w0, last: w0, base: JSON.parse(JSON.stringify(st.manual.rows[r0].cells))}; moveApply(w0); render(); return; }
+    snapshot(); ensureManual();
+    MOVE = {r: +td.dataset.r, mode: z.mode, run: z.run, w0: +td.dataset.w, last: +td.dataset.w, base: JSON.parse(JSON.stringify(st.manual.rows[+td.dataset.r].cells))}; return; }
+  if (BRUSH === "text"){ e.preventDefault(); editText(td); return; }
+  e.preventDefault(); snapshot();
+  PAINT = {r: +td.dataset.r}; applyBrush(PAINT.r, +td.dataset.w); render();
+});
+document.addEventListener("pointermove", e => {
+  if (MOVE){ const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest && el.closest("td.gc");
+    if (td && +td.dataset.r === MOVE.r && +td.dataset.w !== MOVE.last){ MOVE.last = +td.dataset.w; moveApply(MOVE.last); render(); } return; }
+  if (BRUSH === "move" && !PAINT){ const el = e.target.closest && e.target.closest("td.gc"); if (el && gantt().contains(el)){ const z = moveZone(el, e); el.style.cursor = !z ? "crosshair" : z.mode === "move" ? "grab" : "ew-resize"; } return; }
+  if (!PAINT) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest && el.closest("td.gc");
+  if (td && +td.dataset.r === PAINT.r){ const w = +td.dataset.w, c = G.rows[PAINT.r].cells[w];
+    if ((BRUSH === "erase" && (c.k || c.t)) || (BRUSH !== "erase" && c.k !== BRUSH)){ applyBrush(PAINT.r, w); render(); } }
+});
+document.addEventListener("pointerup", () => { PAINT = null; MOVE = null; });
+document.addEventListener("dblclick", e => { const td = e.target.closest("td.gc"); if (td && gantt().contains(td)) editText(td); });
+document.addEventListener("focusout", e => {
+  const t = e.target; if (!t.dataset || t.dataset.rl === undefined) return;
+  const r = +t.dataset.rl, v = t.textContent.trim();
+  if (v && v !== G.rows[r].label){ snapshot(); ensureManual().rows[r].label = v; render(); }
+});
+document.addEventListener("keydown", e => { if (e.target.dataset && e.target.dataset.rl !== undefined && e.key === "Enter"){ e.preventDefault(); e.target.blur(); } });
+document.addEventListener("click", e => {
+  const bb = e.target.closest("[data-brush]"); if (bb){ BRUSH = bb.dataset.brush; render(); return; }
+  const mv = e.target.closest("[data-rmv]");
+  if (mv){ const r = +mv.dataset.rmv, to = r + (+mv.dataset.dir); if (to < 0 || to >= G.rows.length) return; snapshot(); const m = ensureManual(); [m.rows[r], m.rows[to]] = [m.rows[to], m.rows[r]]; render(); return; }
+  const rd = e.target.closest("[data-rdel]"); if (rd){ snapshot(); ensureManual().rows.splice(+rd.dataset.rdel, 1); render(); return; }
+  const id = e.target.id;
+  if (id === "addRow"){ snapshot(); const m = ensureManual(); m.rows.push({label: "New task", cells: Array.from({length: m.weeks}, () => ({k:"", t:"", b:false}))}); render(); return; }
+  if (id === "addWeek"){ snapshot(); const m = ensureManual(); m.weeks += 1; m.rows.forEach(r => r.cells.push({k:"", t:"", b:false})); render(); return; }
+  if (id === "delWeek"){ const m0 = st.manual || G; if (m0.weeks <= 1) return; snapshot(); const m = ensureManual(); m.weeks -= 1; m.rows.forEach(r => r.cells.pop()); render(); return; }
+  if (id === "undo"){ if (!HIST.length) return; const prev = JSON.parse(HIST.pop()); st.manual = prev; render(); return; }
+  if (id === "rebuild"){ const b = e.target;
+    if (b.dataset.armed){ snapshot(); st.manual = null; src = "Built from inputs"; delete b.dataset.armed; b.textContent = "Rebuild from inputs"; render(); }
+    else { b.dataset.armed = "1"; b.textContent = "Click again: discards hand edits"; setTimeout(() => { delete b.dataset.armed; b.textContent = "Rebuild from inputs"; }, 3000); } }
+});
+
+/* ---- events ---- */
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.z || t.dataset.zg || t.dataset.zo) return;
+  if (t.closest && t.closest("#gantt")) return;
+  if (t.dataset.k){ st[t.dataset.k] = t.value; render(); }
+  else if (t.dataset.s){ const k = t.dataset.s; st.study[k] = t.type === "checkbox" ? t.checked : (t.type === "number" ? t.value : t.value);
+    if (k === "type") st.study.analysisWeeks = /Validation/.test(t.value) ? 4 : 3; render(); }
+  else if (t.dataset.d){ const c = st.delivs[t.dataset.d], f = t.dataset.f, d = DELIVS.find(x => x.id === t.dataset.d);
+    c[f] = t.type === "checkbox" ? t.checked : t.value;
+    if (f === "size") c.weeks = d.w[+t.value];
+    if (f === "on" || f === "size") renderDelivs();
+    render(); }
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-mode]"); if (b){ st.mode = b.dataset.mode; render(); return; }
+  const sb = e.target.closest("[data-start]");
+  if (sb){ const v = sb.dataset.start; if (st.start === v) return;
+    if (v === "scratch"){ const keep = {mode: st.mode, startDate: st.startDate, location: st.location}; st = Object.assign(defaultState(), keep); st.start = "scratch"; st.size = blankSize(); src = "Starting from scratch"; }
+    else { st.start = "proposal"; src = "Paste the Comm Ops answers to import"; }
+    renderDelivs(); render(); return; }
+  if (e.target.id === "zadd"){ st.size.groups.push({name:"", n:"", sh:"1", pn:"0"}); render(); return; }
+  const zl = e.target.closest("[data-zlist]"); if (zl){ const g = st.size.groups[+zl.dataset.zlist]; g._c = false; if (!["0.5","1","1.5","2","2.5","3","3.5","4"].includes(String(g.sh))) g.sh = "1"; render(); return; }
+  const zd = e.target.closest("[data-zdel]"); if (zd){ st.size.groups.splice(+zd.dataset.zdel, 1); if (!st.size.groups.length) st.size.groups.push({name:"", n:"", sh:"1", pn:"0"}); render(); }
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.z && t.value === "__other"){ const k = t.dataset.z; st.size[k + "_c"] = true; render(); const b = $(t.id + "_o"); if (b){ b.value = st.size[k] ?? ""; b.focus(); } return; }
+  if (t.dataset.zg !== undefined && t.value === "__other"){ const gi = +t.dataset.zg; st.size.groups[gi]._c = true; render(); const n = document.querySelector(`input[data-zg="${gi}"][data-f="sh"]`); if (n){ n.value = ""; n.focus(); } return; }
+  if (t.dataset.zo){ const v = String(t.value).trim(); if (v !== "" && +v >= 0){ st.size[t.dataset.zo] = v; render(); } return; }
+  if (t.dataset.z){ st.size[t.dataset.z] = t.value; st.size[t.dataset.z + "_c"] = false; render(); }
+  else if (t.dataset.zg){ st.size.groups[+t.dataset.zg][t.dataset.f] = t.value; render(); }
+});
+$("reset").onclick = e => { const b = e.currentTarget;
+  if (b.dataset.armed){ st = defaultState(); st.start = "proposal"; src = "Blank"; delete b.dataset.armed; b.textContent = "Clear"; renderDelivs(); render(); }
+  else { b.dataset.armed = "1"; b.textContent = "Click again to clear"; setTimeout(() => { delete b.dataset.armed; b.textContent = "Clear"; }, 3000); } };
+/* ---- import from Comm Ops ---- */
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+function monthToDate(s, end){ const m = /^(\w+)\s+(\d{4})$/.exec(s||""); if (!m) return ""; const mi = MONTHS.indexOf(m[1]); if (mi < 0) return "";
+  if (end) return new Date(Date.UTC(+m[2], mi+1, 0)).toISOString().slice(0,10);
+  const d = new Date(Date.UTC(+m[2], mi, 1)); const off = (8 - d.getUTCDay()) % 7; return new Date(d.getTime() + off*864e5).toISOString().slice(0,10); }
+$("doimp").onclick = () => {
+  const raw = $("imp").value, m = raw.match(/TIMELINE-DATA:\s*([A-Za-z0-9+/=]+)/), msg = $("impmsg");
+  if (!m){ msg.className = "err"; msg.textContent = "No TIMELINE-DATA line found. Copy the full final answers from the Comm Ops form."; return; }
+  let td; try { td = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (_) { msg.className = "err"; msg.textContent = "That line couldn't be read. Copy the Comm Ops answers again."; return; }
+  const s = defaultState();
+  s.client = td.client || ""; s.project = td.project || ""; s.location = td.location || "US";
+  Object.assign(s.study, {on: !!td.study, type: td.studyType || "Later Formative", studyDays: td.studyDays || 1, pilot: !!td.pilot && td.pilotDays > 0, pilotDays: td.pilotDays || 0,
+    irb: td.irb === "Full Convened" ? "Full Convened" : td.irb === "Expedited" ? "Expedited" : "None", recruit: !!td.recruit, dry: !!td.dry,
+    analysisWeeks: /Validation/.test(td.studyType || "") ? 4 : 3});
+  const SZI = {Small:0, Medium:1, Large:2};
+  for (const name of td.delivs || []){ const d = DELIVS.find(x => x.intake === name); if (!d) continue; s.delivs[d.id].on = true;
+    const z = td.sizes && SZI[td.sizes[name]]; if (z !== undefined && d.id !== "D9"){ s.delivs[d.id].size = z; s.delivs[d.id].weeks = d.w[z]; } }
+  const HV = {"Version 1 (for Pre-Sub) + Version 2 (after validation)":["D10","D11"], "Version 1 only (for Pre-Sub)":["D10"], "Version 2 only (after validation)":["D11"]};
+  if (s.delivs.D12.on && HV[td.hfeVer]){ s.delivs.D12.on = false; for (const id of HV[td.hfeVer]) s.delivs[id].on = true; }
+  if (s.delivs.D4.on && td.ifuScope){ s.delivs.D4.refine = /refinement/.test(td.ifuScope); s.delivs.D4.verify = /verification/.test(td.ifuScope); }
+  const notes = [];
+  if (td.tStart && /\d{4}/.test(td.tStart)){ s.mode = "dates"; s.startDate = monthToDate(td.tStart); }
+  if (td.tExec && /\d{4}/.test(td.tExec)){ s.targetDate = monthToDate(td.tExec); if (s.mode !== "dates") notes.push("Target study month imported; set a start date to use it."); }
+  if (td.tEnd && /\d{4}/.test(td.tEnd)) s.deadlineDate = monthToDate(td.tEnd, true);
+  if ((td.delivs || []).includes("Human Factors Engineering Submission Report") && !HV[td.hfeVer]) notes.push("HFE report set to the single full version; switch to V1 / V2 if needed.");
+  s.start = "proposal"; st = s; src = "Imported from Comm Ops";
+  msg.className = "status"; msg.textContent = "Imported." + (notes.length ? " " + notes.join(" ") : "");
+  renderDelivs(); render();
+};
+/* ---- exports ---- */
+let DL = null;
+(async () => { try { DL = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch (_) { DL = null; }
+  if (!DL){ $("dlP").hidden = true; $("dlI").hidden = true; } })();
+const fname = ext => `Estimated_Timeline.${ext}`;
+const say = (t, bad) => { const m = $("expmsg"); m.className = bad ? "err" : "status"; m.textContent = t; if (!bad) setTimeout(() => { if (m.textContent === t) m.textContent = ""; }, 4000); };
+$("copyT").onclick = async () => {
+  const html = `<p style="font:700 14px Arial,sans-serif;color:#0C273A">${TITLE}</p>` + gridHTML(getX(), true, false);
+  try { await navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([html], {type:"text/html"}), "text/plain": new Blob([summaryText(G)], {type:"text/plain"})})]); say("Copied. Paste into Word or PowerPoint (keep source formatting)."); }
+  catch (_) { const r = document.createRange(); r.selectNode($("gantt")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); say("Your browser blocked copying. The table is selected: press Ctrl+C / Cmd+C.", true); }
+};
+$("copyS").onclick = async () => { const ta = $("sum"); try { await navigator.clipboard.writeText(ta.value); say("Summary copied."); } catch (_) { ta.focus(); ta.select(); say("Press Ctrl+C / Cmd+C to copy.", true); } };
+$("dlP").onclick = async () => {
+  if (typeof PptxGenJS === "undefined"){ say("The PowerPoint library didn't load. Use Copy table instead.", true); return; }
+  try {
+    const wi = weekInfo(G.weeks), p = new PptxGenJS(); p.layout = "LAYOUT_WIDE"; const s = p.addSlide();
+    s.addText(TITLE, {x:0.5, y:0.35, w:12.3, h:0.6, fontFace:"Arial", fontSize:28, bold:true, color:"0C273A"});
+    const X = getX(), isM = X.unit === "month", xi = isM ? {labels: X.labels} : wi, W = X.weeks, labelW = W > 26 ? 2.4 : 2.8, total = 12.33, cw = (total - labelW) / W;
+    const fsH = W <= 14 ? 12 : W <= 26 ? 10 : 8, fsC = W <= 14 ? 11 : W <= 26 ? 9 : 7, fsL = W <= 14 ? 13 : 11;
+    const nRows = X.rows.length + 1, avail = 7.5 - 1.25 - 0.8, rowH = Math.max(0.42, Math.min(0.95, avail / (nRows + (xi.labels ? 0.5 : 0))));
+    const head = [{text: isM ? "Month" : "Week", options:{fill:{color:C.head}, color:"FFFFFF", bold:true, fontSize:fsL, align:"left"}}];
+    for (let w = 1; w <= W; w++) head.push({text: (xi.labels && W <= 26) ? `${w}\n${(isM ? monthLbl : fmtD)(xi.labels[w-1])}` : String(w), options:{fill:{color:C.head}, color:"FFFFFF", bold:true, fontSize:fsH, align:"center", ...(isM ? {colspan: 4} : {})}});
+    const rows = [head];
+    for (const row of X.rows){
+      const r = [{text: row.label, options:{fill:{color:C.label}, color:C.txt, fontSize:fsL, align:"left"}}];
+      row.cells.forEach(c => { if (c.p) c.p.forEach(pk => r.push({text: "", options:{fill:{color:FILL(pk)}, fontSize: 6, align:"center", valign:"middle"}}));
+        else r.push({text: c.t || "", options:{fill:{color:FILL(c.k)}, color:INK(c.k, c.b), bold: !!c.b, fontSize: fsC, align:"center", valign:"middle", ...(isM ? {colspan: 4} : {})}}); });
+      rows.push(r);
+    }
+    s.addTable(rows, {x:0.5, y:1.25, w:total, colW:[labelW, ...Array(W * (isM ? 4 : 1)).fill(isM ? cw / 4 : cw)], rowH: rowH, border:{type:"solid", pt:2, color:"FFFFFF"}, fontFace:"Arial", valign:"middle", margin:0.04});
+    const blob = await p.write({outputType:"blob"});
+    await DL.save({filename: fname("pptx"), data: blob});
+    say("PowerPoint slide ready.");
+  } catch (err) { say("Couldn't create the slide" + (err && err.message ? ": " + err.message : "") + ". Use Copy table instead.", true); }
+};
+$("dlI").onclick = async () => {
+  try {
+    const X = getX(), isM = X.unit === "month", xi = isM ? {labels: X.labels, hol: []} : weekInfo(X.weeks), dfm = isM ? monthLbl : fmtD, W = X.weeks;
+    const lw = 260, cw = W <= 8 ? 96 : W <= 14 ? 72 : W <= 26 ? 56 : 46, hh = xi.labels ? 60 : 44, rh = 52, pad = 24, tH = 50, fC = W <= 14 ? 13 : W <= 26 ? 12 : 10, fL = 15, fH = 15;
+    const cv = document.createElement("canvas"), sc = 3; cv.width = (pad*2 + lw + W*cw) * sc; cv.height = (pad*2 + tH + hh + X.rows.length*rh) * sc;
+    const g = cv.getContext("2d"); g.scale(sc, sc); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height);
+    g.fillStyle = "#0C273A"; g.font = "bold 24px Arial"; g.textBaseline = "middle"; g.fillText(TITLE, pad, pad + 16);
+    const y0 = pad + tH, box = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x+1, y+1, w-2, h-2); };
+    box(pad, y0, lw, hh, "#" + C.head); g.fillStyle = "#fff"; g.font = "bold " + fH + "px Arial"; g.fillText(isM ? "Month" : "Week", pad + 10, y0 + hh/2);
+    for (let w = 1; w <= W; w++){ const x = pad + lw + (w-1)*cw; box(x, y0, cw, hh, "#" + C.head); g.fillStyle = "#fff"; g.textAlign = "center";
+      g.font = "bold " + fH + "px Arial"; g.fillText(String(w), x + cw/2, y0 + (xi.labels ? 18 : hh/2));
+      if (xi.labels){ g.font = "12px Arial"; g.fillText(dfm(xi.labels[w-1]), x + cw/2, y0 + 41); }
+      if (xi.hol.some(h => h.w === w)){ g.fillStyle = "#F4B782"; g.fillText("\u25cf", x + cw - 8, y0 + 10); }
+      g.textAlign = "left"; }
+    X.rows.forEach((row, i) => { const y = y0 + hh + i*rh; box(pad, y, lw, rh, "#" + C.label); g.fillStyle = "#" + C.txt; g.font = fL + "px Arial";
+      const lw2 = row.label.split(" "), ll = []; let cu = ""; for (const wd of lw2){ const nx = cu ? cu + " " + wd : wd; if (g.measureText(nx).width > lw - 20 && cu){ ll.push(cu); cu = wd; } else cu = nx; } ll.push(cu);
+      ll.slice(0, 2).forEach((ln, q) => g.fillText(ln, pad + 10, y + rh/2 + (q - (Math.min(ll.length,2)-1)/2) * (fL + 3)));
+      row.cells.forEach((c, k) => { const x = pad + lw + k*cw; if (c.p){ c.p.forEach((pk, q) => box(x + q*cw/4, y, cw/4, rh, "#" + FILL(pk))); return; } box(x, y, cw, rh, "#" + FILL(c.k));
+        if (c.t){ g.fillStyle = "#" + INK(c.k, c.b); g.font = (c.b ? "bold " : "") + fC + "px Arial"; g.textAlign = "center";
+          const words = c.t.split(" "), lines = []; let cur = ""; for (const wd of words){ const nx = cur ? cur + " " + wd : wd; if (g.measureText(nx).width > cw - 8 && cur){ lines.push(cur); cur = wd; } else cur = nx; } lines.push(cur);
+          lines.slice(0, 3).forEach((ln, q) => g.fillText(ln, x + cw/2, y + rh/2 + (q - (Math.min(lines.length,3)-1)/2) * (fC + 2))); g.textAlign = "left"; } }); });
+    const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+    await DL.save({filename: fname("png"), data: blob});
+    say("Image ready.");
+  } catch (err) { say("Couldn't create the image. Use Copy table instead.", true); }
+};
+$("unitSel").onchange = e => { UNIT = e.target.value; say(UNIT === "month" ? "Exports (copy table, PowerPoint, image) will now use months. The editing grid above stays in weeks." : "Exports will use weeks."); };
+renderDelivs(); render();
+</script>
+
+</body></html>

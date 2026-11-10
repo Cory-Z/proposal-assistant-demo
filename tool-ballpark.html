@@ -1,0 +1,317 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Ballpark Quote Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: quick estimator &#x2014; header, one compact input card (study + groups + extras), live range table styled for email, copy bar */
+:root{
+  --bg:#F6FAFA; --surface:#ffffff; --fg:#16222B; --muted:#5A6872; --line:#DBE3E8; --chip:#E9F5F6;
+  --navy:#0C273A; --purple:#196972; --pink:#F4B782; --ok:#1f6b4a; --warn-bg:#fff4dc; --warn-ink:#7a5000;
+  --display:"Sora",ui-sans-serif,system-ui,sans-serif; --body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111C24;--surface:#1A2933;--fg:#EBF1F5;--muted:#A6B6C2;--line:#2D404D;--chip:#253947;--navy:#C6E1F5;--purple:#A4E7EF;--ok:#8fe0b6;--warn-bg:#3a2d10;--warn-ink:#f4cf7a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111C24;--surface:#1A2933;--fg:#EBF1F5;--muted:#A6B6C2;--line:#2D404D;--chip:#253947;--navy:#C6E1F5;--purple:#A4E7EF;--ok:#8fe0b6;--warn-bg:#3a2d10;--warn-ink:#f4cf7a;color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:22px 60px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+h1,h2{font-family:var(--display);color:var(--navy);margin:0;font-weight:600;text-wrap:balance}
+h1{font-size:clamp(1.5rem,3vw,2rem)} h2{font-size:1.1rem}
+header{display:grid;gap:6px;border-bottom:3px solid var(--pink);padding-bottom:14px}
+.logo{background:#fff;border-radius:8px;padding:7px 11px;line-height:0;justify-self:start}.logo img{height:32px;width:auto}
+.eyebrow{font:500 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--purple)}
+.lede{margin:0;color:var(--muted);max-width:74ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.f{display:grid;gap:4px} .f label,.lab{font:500 .72rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+input,select{font:15px var(--body);padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+.gt{border-collapse:collapse;width:100%} .gt th{font:500 .68rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 6px}
+.gt td{padding:4px 6px;border-top:1px solid var(--line)} .tbl{overflow-x:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.88rem;cursor:pointer;background:var(--surface)}
+.chips input{width:auto}
+.chips label:has(input:checked){border-color:var(--purple);background:var(--chip);color:var(--purple);font-weight:600}
+.btn{font:600 .88rem var(--body);border:0;background:var(--purple);color:#fff;border-radius:999px;padding:7px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--purple);border:1px solid var(--purple)} .x{background:none;border:0;color:var(--muted);cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.out{background:#fff;border-radius:10px;border:1px solid var(--line);padding:16px;overflow-x:auto;color:#16222B}
+.bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.status{font-size:.88rem;color:var(--ok)} .note{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:8px 12px;font-size:.9rem}
+details summary{cursor:pointer;color:var(--purple);font-weight:600}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCAzMDAgNjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iQWNtZSBIRiBsb2dvIj48cmVjdCB4PSIyIiB5PSI4IiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMiIgZmlsbD0iIzFGOEE5OSIvPjxwYXRoIGQ9Ik0xNCA0MiBMMjYgMTQgTDM4IDQyIE0xOSAzNCBIMzMiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSI2MiIgeT0iMzEiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEwMzI0QSI+QWNtZSBIRjwvdGV4dD48dGV4dCB4PSI2MyIgeT0iNTAiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjIuMiIgZmlsbD0iIzFGOEE5OSI+SFVNQU4gRkFDVE9SUzwvdGV4dD48L3N2Zz4=" alt="Acme HF"></div>
+  <div class="eyebrow">Proposal tools &#xb7; Ballpark</div>
+  <h1>Ballpark Quote Builder</h1>
+  <p class="lede">A rough price range from a handful of answers. The low end uses optimistic assumptions, the high end conservative ones, both from the same pricing rules as the study calculator. Copy the table straight into an email.</p>
+</header>
+
+<section class="card" aria-labelledby="h-in">
+  <h2 id="h-in">Quick inputs</h2>
+  <div class="grid">
+    <div class="f"><label for="study">Usability study</label><select id="study"><option value="">No study</option><option>Early Formative</option><option selected>Later Formative</option><option value="Validation / Summative">Validation / Summative</option></select></div>
+    <div class="f"><label for="site">Study site</label><select id="site"><option>Acme HF facility</option><option value="Client site">Client / 3rd-party site</option></select></div>
+    <div class="f"><label for="rec">Recruitment</label><select id="rec"><option value="Acme HF">Acme HF recruits</option><option value="Client">Client recruits</option></select></div>
+    <div class="f"><label for="pilot">Pilot</label><select id="pilot"><option>No</option><option>Yes</option></select></div>
+    <div class="f"><label for="irb">IRB</label><select id="irb"><option>None</option><option>Expedited</option><option value="Full Convened">Full convened</option></select></div>
+  </div>
+  <div id="grpBox" style="display:grid;gap:8px">
+    <span class="lab">User groups</span>
+    <div class="tbl"><table class="gt"><thead><tr><th>Participant type</th><th>Participants needed</th><th>Session length (hrs)</th><th></th></tr></thead><tbody id="grows"></tbody></table></div>
+    <div><button class="btn ghost" id="addg" type="button">Add user group</button></div>
+  </div>
+  <div style="display:grid;gap:8px"><span class="lab">Other deliverables (range = small to large scope)</span><div class="chips" id="dlv"></div></div>
+  <div class="grid"><div class="f"><label for="sender">Your name (email sign-off)</label><input id="sender" placeholder="Name"></div></div>
+</section>
+
+<section class="card" aria-labelledby="h-out">
+  <div class="bar"><h2 id="h-out">Ballpark estimate</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="copy" type="button">Copy for email</button></div></div>
+  <span class="status" id="msg" aria-live="polite"></span>
+  <div class="out" id="out"></div>
+  <details><summary>How the range is built</summary>
+    <p class="lede" style="font-size:.9rem">Low: solid client screener draft, standard protocol complexity, no prep buffer, 15-minute breaks, facilitator 6 hrs/day, few critical tasks and use errors. High: poor or no screener draft, moderately complex protocol (&#xd7;1.25), 10% prep buffer, 30-minute breaks, facilitator 8 hrs/day, many critical tasks and a standard number of use errors needing root cause analysis. Other deliverables run from the small to the large scope tier. Project management is 15% of consulting fees (minimum $4,000). Recruitment and incentive rates by participant type: patients/lay users $120 / $60, nurses/HCPs $200 / $80, physicians/surgeons $400 / $320. Ranges are rounded out to the nearest $800.</p>
+  </details>
+</section>
+</div>
+
+<script>
+
+const RATES_DEFAULT={Rate:176,DayHrs:8,RecRate:80,FacRate:120,SessWindow:6.5,ConductUplift:1.2,ReviewPct:0.5,CogHrs:2,
+ OnbPeople:3,OnbStd:0.5,OnbCx:1,OnbRound:800,ScrSolidC:1,ScrSolidR:1,ScrPoorC:2,ScrPoorR:2,AgrBase:2,AgrAdd:1,
+ ProtoFormBase:4800,ProtoFormAdd:800,ProtoVSBase:6400,ProtoVSAdd:800,ProtoRevFormBase:1600,ProtoRevFormAdd:800,ProtoRevVSBase:2400,ProtoRevVSAdd:800,
+ DSCreate:1200,DSReview:600,ModBase:1600,ModPerHr:400,LogHrs:1,DemoHrs:2,HFDays:3,IRBExp:2000,IRBFull:4720,DBFee:1200,AnalysisRatio:2,
+ QSDays:2,PMMin:4000,PMRate:176,Markup:0.10,MarkupRound:200,OverRecruit:0.2,PrepAdj:0.9,RepFixed:8000,RepPax:320,RepLen:108,RepCritS:800,RepCritM:2400,RepUES:52,RepUEM:160,RepTmpl:1600,
+ FacilityDay:1600,TrainRoomDay:500,AdminFee:20,SunshineFee:60,Subsist:100,Hotel:200,Flight:480};
+const RATE_LABELS={Rate:"Consultant $/hr",DayHrs:"Hours per day",RecRate:"Recruitment $/hr (assumed)",FacRate:"Facilitator $/hr",SessWindow:"Session hrs per study day",ConductUplift:"Conduct uplift \u00d7",ReviewPct:"Review % of creation (assumed)",CogHrs:"Cognitive bias training hrs (assumed)",
+ OnbPeople:"Onboarding staff per team",OnbStd:"Onboarding days/person (standard)",OnbCx:"Onboarding days/person (complex)",OnbRound:"Onboarding round-up to $",
+ ScrSolidC:"Screener hrs: solid draft, consultant",ScrSolidR:"Screener hrs: solid draft, recruitment",ScrPoorC:"Screener hrs: poor draft, consultant",ScrPoorR:"Screener hrs: poor draft, recruitment",AgrBase:"Agreement hrs: first group",AgrAdd:"Agreement hrs: each extra group",
+ ProtoFormBase:"Protocol create ef/lf base",ProtoFormAdd:"\u2026 per extra distinct group",ProtoVSBase:"Protocol create vs base",ProtoVSAdd:"\u2026 per extra distinct group",ProtoRevFormBase:"Protocol review ef/lf base",ProtoRevFormAdd:"\u2026 per extra distinct group",ProtoRevVSBase:"Protocol review vs base",ProtoRevVSAdd:"\u2026 per extra distinct group",
+ DSCreate:"Data sheets create /session-hr/group",DSReview:"Data sheets review /session-hr/group",ModBase:"Moderator script base /group",ModPerHr:"Moderator script per extra hr",LogHrs:"Article log hrs /group",DemoHrs:"Demographics hrs /group",
+ HFDays:"High-fidelity model days",IRBExp:"Expedited IRB",IRBFull:"Full Convened IRB",DBFee:"Database fee",AnalysisRatio:"Analysis hrs per video hr",QSDays:"Quality systems days (vs)",
+ PMMin:"PM minimum",PMRate:"PM $/hr (time-based, assumed)",Markup:"Task markup (hour/day-rate tasks)",MarkupRound:"Round marked-up tasks to $",OverRecruit:"Over-recruit buffer (worst case)",PrepAdj:"Study prep adjustment (90% = \u221210%)",RepFixed:"Report: fixed cost",RepPax:"Report: per priced participant",RepLen:"Report: per participant-hour over 1 hr",RepCritS:"Report: critical tasks Standard",RepCritM:"Report: critical tasks Many",RepUES:"Report: RCA Standard /participant",RepUEM:"Report: RCA Many /participant",RepTmpl:"Report: first-time template (assumed)",
+ FacilityDay:"Facility $/day",TrainRoomDay:"Training room $/day",AdminFee:"Admin fee /participant",SunshineFee:"Sunshine Act /participant",Subsist:"Subsistence /person/day",Hotel:"Hotel /person/night",Flight:"Flight /person"};
+/* Report hours per unit: [PowerPoint, Word, Word + PPT]. PROPOSED starting points. */
+const RPR_DEFAULT={Base:[8,16,22],Group:[4,8,10],Sess:[0.75,1.25,1.5],Len:[0.25,0.25,0.25],Tmpl:[8,8,8],Round:[4,8,10]};
+/* Tiered report components: hours for [Few, Standard, Many]. */
+const TIER_DEFAULT={Crit:[4,8,16],UE:[4,10,20]};
+const TIER_LABELS={Crit:"Critical tasks: extra write-up (hrs)",UE:"Use errors needing root cause analysis (hrs)"};
+const TIERS=["Few","Standard","Many"];
+const RPR_LABELS={Base:"Base setup and structure (hrs)",Group:"Per distinct user group (hrs)",Sess:"Per session, 1-hr session (hrs)",Len:"Session-length uplift per extra hr (fraction)",Tmpl:"First-time client template (hrs)",Round:"Per extra review round (hrs)"};
+const EXAMPLE={studyType:"Later Formative",teams:1,breakMin:15,format:"Individual",comboPPD:"",
+ groups:[{name:"Nurses",n:12,sh:1,distinct:"Yes",rr:200,it:80,tr:80,ppd:""},{name:"Patients",n:10,sh:1.5,distinct:"Yes",rr:120,it:60,tr:40,ppd:""}],
+ onbLevel:"Standard",hf:"No",scr:"Yes",scrDraft:"Solid client draft",scrCx:1,agr:"Yes",irb:"None",
+ prepSess:"",protoSt:"Create",protoCx:1,dsSt:"Create",modSt:"Create",logSt:"Create",demoSt:"Create",
+ setup:4,takedown:2,clientSetup:"No",clientSetupHrs:0,camera:2,dry:2,dryStaff:2,ship:0,buffer:0,pilot:"No",pilotGroups:null,pilotUpdHrs:0,mods:1,obs:1,clientObs:"No",clientObsN:1,facHrs:8,
+ rpCrit:"Standard",rpUE:"Few",rpTmpl:"No",
+ train:"No",studySite:"Acme HF facility",initFee:2400,misc:1600,devShip:0,travC:0,travSetup:0,travDays:2,travExtra:0,travTime:1,
+ pm:"Yes",pmMethod:"% of consulting",pmPct:15,pmHrsWk:4,pmWeeks:16};
+const KEY="cm_calc_v4";
+const pilotFromStudy=()=>S.groups.map(g=>({name:g.name,n:"",sh:g.sh,rr:g.rr,it:g.it,tr:g.tr,sun:g.sun||"No",ppd:""}));
+const ensurePilot=()=>{if(!Array.isArray(S.pilotGroups))S.pilotGroups=pilotFromStudy();};
+let S,RT,RPR,TIER;
+/* Only rates the user actually edits are saved (as overrides), so rate-card updates in new versions always come through. */
+function load(){
+ S=structuredClone(EXAMPLE);RT={...RATES_DEFAULT};RPR=structuredClone(RPR_DEFAULT);TIER=structuredClone(TIER_DEFAULT);
+ try{
+  let s=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(!s){const old=JSON.parse(localStorage.getItem("cm_calc_v3")||"null");if(old&&old.S)s={S:old.S};}  // keep old inputs, drop old saved rates
+  if(s&&s.S){S=Object.assign(structuredClone(EXAMPLE),s.S);
+   if(s.RTo)for(const k in s.RTo)if(k in RATES_DEFAULT)RT[k]=s.RTo[k];
+   if(s.RPRo)for(const k in s.RPRo)if(k in RPR_DEFAULT)RPR[k]=s.RPRo[k];
+   if(s.TIERo)for(const k in s.TIERo)if(k in TIER_DEFAULT)TIER[k]=s.TIERo[k];
+   if(!TIERS.includes(S.rpCrit))S.rpCrit=EXAMPLE.rpCrit;if(!TIERS.includes(S.rpUE))S.rpUE=EXAMPLE.rpUE;}
+ }catch(e){}
+}
+function save(){try{
+ const RTo={},RPRo={};
+ for(const k in RATES_DEFAULT)if(RT[k]!==RATES_DEFAULT[k])RTo[k]=RT[k];
+ for(const k in RPR_DEFAULT)if(JSON.stringify(RPR[k])!==JSON.stringify(RPR_DEFAULT[k]))RPRo[k]=RPR[k];
+ const TIERo={};for(const k in TIER_DEFAULT)if(JSON.stringify(TIER[k])!==JSON.stringify(TIER_DEFAULT[k]))TIERo[k]=TIER[k];
+ localStorage.setItem(KEY,JSON.stringify({S,RTo,RPRo,TIERo}));
+}catch(e){}}
+const $=v=>"$"+Math.round(v).toLocaleString("en-US");
+const num=v=>{const x=parseFloat(v);return isNaN(x)?0:x};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const r1=x=>Math.round(x*10)/10;
+const up250=x=>Math.ceil(x/RT.MarkupRound-1e-9)*RT.MarkupRound;
+const mu=x=>Math.round(x*(1+RT.Markup)/RT.MarkupRound)*RT.MarkupRound;
+
+function compute(){
+ const R=RT,dayRate=R.Rate*R.DayHrs,bh=num(S.breakMin)/60,isVS=S.studyType==="Validation / Summative";
+ const gs=S.groups.map((g,i)=>({...g,i,net:num(g.n),pn:num(g.n)>0?Math.ceil(num(g.n)*(1+R.OverRecruit)-1e-9):0})).filter(g=>g.pn>0).map(g=>{const auto=Math.max(1,Math.floor((R.SessWindow+bh)/(num(g.sh)+bh)+1e-6));const used=num(g.ppd)>0?num(g.ppd):auto;return {...g,auto,used,days:Math.ceil(g.pn/used)}});
+ const netPax=gs.reduce((a,g)=>a+g.net,0);
+ const UG=gs.length,D=UG?Math.max(1,gs.filter(g=>g.distinct==="Yes").length):0;
+ const pax=gs.reduce((a,g)=>a+g.pn,0);
+ const maxSess=UG?Math.max(...gs.map(g=>num(g.sh))):0,teams=Math.max(1,num(S.teams));
+ const fmtUsed=UG<2?"Individual":S.format, pps=fmtUsed==="Dyad"?2:fmtUsed==="Triad"?3:1;
+ const sessions=pps===1?pax:Math.ceil(pax/pps);
+ const comboPPD=num(S.comboPPD)>0?num(S.comboPPD):Math.max(1,Math.floor((R.SessWindow+bh)/(Math.max(maxSess,0.25)+bh)+1e-6));
+ const sessDays=pps===1?gs.reduce((a,g)=>a+g.days,0):Math.ceil(sessions/comboPPD);
+ const video=pps===1?gs.reduce((a,g)=>a+g.pn*num(g.sh),0):sessions*maxSess;
+ const calDays=Math.ceil(sessDays/teams);
+ const prepSess=maxSess; // pilot uses the longest session
+ const dg=gs.filter(g=>g.distinct==="Yes");
+ const distHrs=!UG?0:dg.length?dg.reduce((a,g)=>a+num(g.sh),0):maxSess;
+ const modSum=!UG?0:dg.length?dg.reduce((a,g)=>a+R.ModBase+R.ModPerHr*Math.max(0,num(g.sh)-1),0):R.ModBase+R.ModPerHr*Math.max(0,maxSess-1);
+ const avgOver=pps===1?(pax?gs.reduce((a,g)=>a+g.pn*Math.max(0,num(g.sh)-1),0)/pax:0):Math.max(0,maxSess-1);
+ const L={},C={};
+ C.onbDays=S.onbLevel==="Complex"?R.OnbCx:R.OnbStd;C.onbStaff=teams*R.OnbPeople;
+ L.onb=Math.ceil(C.onbStaff*C.onbDays*dayRate/R.OnbRound)*R.OnbRound;
+ L.hf=S.hf==="Yes"?mu(R.HFDays*dayRate):0;
+ const solid=S.scrDraft==="Solid client draft";
+ C.scrPer=solid?R.ScrSolidC*R.Rate+R.ScrSolidR*R.RecRate:R.ScrPoorC*R.Rate+R.ScrPoorR*R.RecRate;
+ C.scr=S.scr==="Yes"?UG*C.scrPer*num(S.scrCx):0;
+ C.agrHrs=S.agr==="Yes"&&UG?R.AgrBase+R.AgrAdd*(UG-1):0;C.agr=C.agrHrs*R.Rate;L.scr=mu(C.scr+C.agr);
+ const verb=solid?"Finalize":"Create";
+ C.scrLabel=S.scr==="Yes"&&S.agr==="Yes"?`${verb} participant screeners and participant agreements`:S.scr==="Yes"?`${verb} participant screeners`:S.agr==="Yes"?"Participant agreements":"Screeners and agreements (not included)";
+ L.irb=S.irb==="Expedited"?R.IRBExp:S.irb==="Full Convened"?R.IRBFull:0;
+ const rev=st=>st==="Review client draft"?R.ReviewPct:1;
+ C.proto=(S.protoSt==="Create"?(isVS?R.ProtoVSBase+R.ProtoVSAdd*(D-1):R.ProtoFormBase+R.ProtoFormAdd*(D-1)):S.protoSt==="Review client draft"?(isVS?R.ProtoRevVSBase+R.ProtoRevVSAdd*(D-1):R.ProtoRevFormBase+R.ProtoRevFormAdd*(D-1)):0)*num(S.protoCx);
+ C.ds=(S.dsSt==="Create"?R.DSCreate:S.dsSt==="Review client draft"?R.DSReview:0)*distHrs;
+ C.mod=S.modSt==="Not needed"?0:modSum*rev(S.modSt);
+ C.log=S.logSt==="Not needed"?0:mu(D*R.LogHrs*R.Rate*rev(S.logSt));
+ C.demo=S.demoSt==="Not needed"?0:mu(UG*R.DemoHrs*R.Rate*rev(S.demoSt));
+ C.clientHrs=S.clientSetup==="Yes"?num(S.clientSetupHrs):0;C.setup=mu((Math.max(0,num(S.setup)+num(S.takedown)-C.clientHrs)+num(S.camera)+num(S.dry)*num(S.dryStaff))*R.Rate);
+ C.prepSub=C.proto+C.ds+C.mod+C.log+C.demo+C.setup+num(S.ship);
+ L.prep=Math.round(C.prepSub*R.PrepAdj*(1+num(S.buffer)/100)/R.MarkupRound)*R.MarkupRound;
+ const staff=Math.max(0,num(S.mods)+Math.max(0,num(S.obs)-(S.clientObs==="Yes"?num(S.clientObsN):0)));
+ ensurePilot();
+ const pOn=S.pilot==="Yes";
+ C.pgs=S.pilotGroups.map((g,i)=>{const pn=num(g.n)>0?Math.ceil(num(g.n)*(1+R.OverRecruit)-1e-9):0;const auto=Math.max(1,Math.floor((R.SessWindow+bh)/(Math.max(num(g.sh),0.25)+bh)+1e-6));const used=num(g.ppd)>0?num(g.ppd):auto;return {...g,i,pn,auto,used,days:pn?Math.ceil(pn/used):0}});
+ const pact=pOn?C.pgs.filter(g=>g.pn>0):[];
+ C.pilotPN=pact.reduce((a,g)=>a+g.pn,0);C.pilotDays=pact.reduce((a,g)=>a+g.days,0);
+ C.pilotRec=pact.reduce((a,g)=>a+g.pn*num(g.rr),0);C.pilotInc=pact.reduce((a,g)=>a+g.pn*num(g.it),0);C.pilotTrav=pact.reduce((a,g)=>a+g.pn*num(g.tr),0);
+ L.pilot=pOn?mu(C.pilotDays*staff*dayRate*R.ConductUplift+C.pilotDays*num(S.facHrs)*R.FacRate+num(S.pilotUpdHrs)*R.Rate):0;
+ L.conduct=up250(sessDays*staff*dayRate*R.ConductUplift);
+ L.cog=S.clientObs==="Yes"?mu(R.CogHrs*R.Rate):0;
+ L.facil=up250(sessDays*num(S.facHrs)*R.FacRate);
+ L.analysis=R.DBFee+mu(R.AnalysisRatio*video*R.Rate);
+ // Report
+ // Report: priced by priced participants (groups don't matter), session length, critical tier, RCA tier, template
+ const extraHrs=gs.reduce((a,g)=>a+g.pn*Math.max(0,num(g.sh)-1),0);
+ C.rpRows=[["Fixed report cost",R.RepFixed],[`Participants (${pax} \u00d7 $${R.RepPax})`,pax*R.RepPax],[`Session length (${r1(extraHrs)} participant-hrs over 1 hr \u00d7 $${R.RepLen})`,extraHrs*R.RepLen],
+  [`Critical tasks (${S.rpCrit})`,S.rpCrit==="Many"?R.RepCritM:S.rpCrit==="Few"?0:R.RepCritS],[`Use error RCA (${S.rpUE}, per participant)`,pax*(S.rpUE==="Many"?R.RepUEM:S.rpUE==="Few"?0:R.RepUES)],["First-time client template",S.rpTmpl==="Yes"?R.RepTmpl:0]];
+ C.rpSub=C.rpRows.reduce((a,x)=>a+x[1],0);
+ C.repNew=Math.round(C.rpSub/R.MarkupRound)*R.MarkupRound;
+ L.report=C.repNew;
+ L.qs=isVS?mu(R.QSDays*dayRate):0;L.close=mu((isVS?2:1)*dayRate);
+ const cons=L.onb+L.hf+L.scr+L.irb+L.prep+L.pilot+L.conduct+L.cog+L.facil+L.analysis+L.report+L.qs+L.close;
+ const atCM=(S.studySite||"Acme HF facility")==="Acme HF facility";L.facility=atCM?(sessDays+C.pilotDays)*R.FacilityDay:0;L.train=atCM&&S.train==="Yes"?(sessDays+C.pilotDays)*R.TrainRoomDay:0;
+ L.init=S.initFee===""||isNaN(parseFloat(S.initFee))?2400:num(S.initFee);L.admin=(L.init>0||gs.some(g=>num(g.rr)>0))?(pax+C.pilotPN)*R.AdminFee:0;L.sun=(gs.reduce((a,g)=>a+(g.sun==="Yes"?g.pn:0),0)+pact.reduce((a,g)=>a+(g.sun==="Yes"?g.pn:0),0))*R.SunshineFee;
+ const recG=gs.map(g=>({d:`Recruitment of up to ${g.pn} ${g.name}`,v:g.pn*num(g.rr)})),incG=gs.map(g=>({d:`Incentives paid to up to ${g.pn} ${g.name}`,v:g.pn*num(g.it)}));
+ if(C.pilotPN>0){recG.push({d:`Pilot: recruitment of up to ${C.pilotPN} participants`,v:C.pilotRec});incG.push({d:`Pilot: incentives paid to up to ${C.pilotPN} participants`,v:C.pilotInc})}
+ L.travReimb=gs.reduce((a,g)=>a+g.pn*num(g.tr),0)+C.pilotTrav;L.misc=num(S.misc);L.devShip=num(S.devShip);
+ const tc=num(S.travC);C.tripDays=tc>0?calDays+num(S.travSetup)+num(S.travDays)+num(S.travExtra):0;
+ L.consTravel=tc>0?tc*(C.tripDays*R.Subsist+Math.max(0,C.tripDays-1)*R.Hotel+R.Flight+num(S.travTime)*dayRate):0;
+ const fac=L.facility+L.train,rec=L.init+recG.reduce((a,x)=>a+x.v,0)+L.admin+L.sun,pass=incG.reduce((a,x)=>a+x.v,0)+L.travReimb+L.misc+L.devShip+L.consTravel;
+ C.pmPct=(S.pmPct===""||isNaN(parseFloat(S.pmPct))?15:num(S.pmPct))/100;
+ C.pmA=Math.max(R.PMMin,Math.round(cons*C.pmPct/400)*400);
+ C.pmB=Math.max(R.PMMin,Math.round(num(S.pmHrsWk)*num(S.pmWeeks)*R.PMRate/400)*400);
+ L.pm=S.pm==="Yes"?(S.pmMethod==="Time-based"?C.pmB:C.pmA):0;
+ return {L,C,gs,UG,D,pax,netPax,distHrs,sessions,sessDays,video,maxSess,prepSess,teams,calDays,staff,fmtUsed,pps,comboPPD,cons,fac,rec,pass,recG,incG,isVS,grand:cons+fac+rec+pass+L.pm};
+}
+
+
+/* ===== ballpark app ===== */
+const TYPES = {"Patients / lay users":{rr:120,it:60,tr:40},"Caregivers":{rr:120,it:60,tr:40},"Nurses / HCPs":{rr:200,it:80,tr:80},"Pharmacists / technicians":{rr:200,it:80,tr:80},"Physicians / surgeons":{rr:400,it:320,tr:80}};
+const DL = [{"id": "URRA_D", "label": "Use-Related Risk Analysis development", "note": "URRA of up to 50\u2013250 rows", "ff": [14000, 20800, 28000]}, {"id": "URRA_R", "label": "Use-Related Risk Analysis review", "note": "review of the Client URRA, up to 50\u2013250 rows", "ff": [4200, 8200, 12200]}, {"id": "USPEC", "label": "Use Specification", "note": "user profiles and use environments", "ff": [6200, 9400, 14000]}, {"id": "IFU", "label": "Instructions for Use expert review & development", "note": "expert review and development of the existing IFU", "ff": [9400, 15600, 23400]}, {"id": "HEUR", "label": "Heuristic analysis & expert UI review", "note": "expert review of the user interface", "ff": [3200, 6200, 9400]}, {"id": "TRAIN", "label": "Minimum viable commercial training", "note": "training checklist and presentation", "ff": [6400, 11000, 15600]}, {"id": "PRESUB_D", "label": "HF validation study documents for FDA Pre-Sub", "note": "validation protocol for the Pre-Submission", "ff": [6400, 7200, 8000]}, {"id": "PRESUB_M", "label": "FDA Pre-Submission meeting support", "note": "slides, remote meeting attendance, minutes", "ff": [7800, 12600, 19800]}, {"id": "HFE", "label": "HFE submission report", "note": "Sections 1\u20138 per FDA Human Factors guidance", "ff": [25200, 40800, 62400]}, {"id": "SOP_FDA", "label": "FDA-compliant HF SOP", "note": "human factors / usability engineering process", "ff": [3200, 4800, 6200]}, {"id": "SOP_IEC", "label": "HF SOP for IEC 62366-1", "note": "IEC 62366-1 process compliance documentation", "ff": [7800, 12400, 18600]}, {"id": "UEF", "label": "IEC 62366-1 Usability Engineering File", "note": "compliance documentation and usability engineering file", "ff": [9400, 15800, 21800]}, {"id": "GAP", "label": "EU MDR / IEC 62366-1 gap analysis", "note": "gap analysis of usability engineering documentation", "ff": [5000, 7400, 10000]}, {"id": "UIEP", "label": "User Interface Evaluation Plan", "note": "formative and/or summative evaluation plan", "ff": [7800, 12400, 18600]}];
+const KEY2 = "cm_ballpark_v1";
+let G = [{t:"Nurses / HCPs", n:12, sh:"1"}, {t:"Patients / lay users", n:10, sh:"1.5"}], SEL = new Set(), SENDER = "";
+try { const j = JSON.parse(localStorage.getItem(KEY2) || "null"); if (j){ G = j.G || G; SEL = new Set(j.SEL || []); SENDER = j.SENDER || ""; ["study","site","rec","pilot","irb"].forEach(k => { if (j[k] !== undefined) document.getElementById(k).value = j[k]; }); } } catch (e) {}
+const byId = id => document.getElementById(id);
+const k$ = v => "$" + Math.round(v).toLocaleString("en-US");
+const lo = v => Math.floor(v / 1000) * 1000, hi = v => Math.ceil(v / 1000) * 1000;
+const rng = (a, b) => a === b ? k$(lo(a)) : `${k$(lo(a))} \u2013 ${k$(hi(b))}`;
+function save(){ try { localStorage.setItem(KEY2, JSON.stringify({G, SEL:[...SEL], SENDER, study:byId("study").value, site:byId("site").value, rec:byId("rec").value, pilot:byId("pilot").value, irb:byId("irb").value})); } catch (e) {} }
+function runCalc(high){
+  S = structuredClone(EXAMPLE); RT = {...RATES_DEFAULT}; RPR = structuredClone(RPR_DEFAULT); TIER = structuredClone(TIER_DEFAULT);
+  const clientRec = byId("rec").value === "Client";
+  Object.assign(S, {studyType: byId("study").value, breakMin: high ? 30 : 15, scrDraft: high ? "Poor or no client draft" : "Solid client draft", protoCx: high ? 1.25 : 1, buffer: high ? 10 : 0,
+    facHrs: high ? 8 : 6, rpCrit: high ? "Many" : "Few", rpUE: high ? "Standard" : "Few", irb: byId("irb").value, studySite: byId("site").value, pilot: byId("pilot").value, pilotUpdHrs: 2,
+    initFee: clientRec ? 0 : 2400, misc: high ? 1600 : 800, camera: 1, travDays: 0, travTime: 0, pmPct: 15});
+  S.groups = G.filter(g => +g.n > 0).map(g => { const r = TYPES[g.t] || TYPES["Patients / lay users"]; return {name: g.t, n: +g.n, sh: +g.sh || 1, distinct: "Yes", rr: clientRec ? 0 : r.rr, it: clientRec ? 0 : r.it, tr: clientRec ? 0 : (high ? r.tr : 0), sun: "No", ppd: ""}; });
+  S.pilotGroups = S.groups.map(g => ({name: g.name, n: S.pilot === "Yes" ? 1 : "", sh: g.sh, rr: g.rr, it: g.it, tr: g.tr, sun: "No", ppd: ""}));
+  return compute();
+}
+function build(){
+  const studyOn = byId("study").value && G.some(g => +g.n > 0);
+  const rows = []; let consL = 0, consH = 0, totL = 0, totH = 0;
+  let r0 = null, r1 = null;
+  if (studyOn){
+    r0 = runCalc(false); r1 = runCalc(true);
+    const b = (r, keys) => keys.reduce((a, k) => a + (r.L[k] || 0), 0);
+    const pax = r1.pax, days0 = r0.calDays, days1 = r1.calDays, gtxt = G.filter(g => +g.n > 0).map(g => `${g.n} ${g.t.split(" /")[0].toLowerCase()}`).join(", ");
+    const add = (name, note, a, z, cons) => { rows.push({name, note, a, z}); totL += a; totH += z; if (cons){ consL += a; consH += z; } };
+    add("Study Preparation", "consultant onboarding, protocol, recruitment screeners, discussion guide, data collection sheets, plan study schedule", b(r0,["onb","hf","scr","irb","prep"]), b(r1,["onb","hf","scr","irb","prep"]), true);
+    if (r1.rec > 0) add("Participant Recruitment", `recruitment start-up and per-recruit costs for up to ${pax} participants (${gtxt} needed, plus 20% over-recruit)`, r0.rec, r1.rec, false);
+    add("Study Conduct", `${days0 === days1 ? days0 : days0 + "\u2013" + days1} study days with a Acme HF Moderator and Observer${byId("pilot").value === "Yes" ? ", plus pilot sessions" : ""}`, b(r0,["conduct","pilot","cog"]), b(r1,["conduct","pilot","cog"]), true);
+    const facA = r0.L.facility + r0.L.train, facZ = r1.L.facility + r1.L.train;
+    add(byId("site").value === "Acme HF facility" ? "Study Facility Rental & Facilitator" : "Study Facilitator", (byId("site").value === "Acme HF facility" ? "facility rental plus " : "") + "reduced-rate host coordinating sessions and communicating with participants", facA + r0.L.facil, facZ + r1.L.facil, false);
+    rows[rows.length-1].consA = r0.L.facil; rows[rows.length-1].consZ = r1.L.facil; consL += r0.L.facil; consH += r1.L.facil;
+    add("Data Analysis & Reporting", "review of videos if necessary, database finalization, 2 drafts and final report", b(r0,["analysis","report","qs"]), b(r1,["analysis","report","qs"]), true);
+    if (r1.pass > 0) add("Pass-Through Expenses", `miscellaneous study expenses/purchases and participant incentives for up to ${pax} participants`, r0.pass, r1.pass, false);
+    consL += r0.L.close; consH += r1.L.close;
+    rows.closeL = r0.L.close; rows.closeH = r1.L.close;
+  }
+  for (const id of SEL){ const d = DL.find(x => x.id === id); if (!d) continue;
+    const a = d.ff[0], z = d.ff[2]; rows.push({name: d.label, note: d.note, a, z}); totL += a; totH += z; consL += a; consH += z; }
+  if (!studyOn && SEL.size){ rows.unshift({name:"Onboarding", note:"kickoff meeting(s), product demonstration and document review", a:2400, z:2400}); totL += 2400; totH += 2400; consL += 3000; consH += 3000; }
+  if (rows.length){
+    const pmL = Math.max(4000, Math.round(consL * 0.15 / 500) * 500) + (rows.closeL || 0), pmH = Math.max(4000, Math.round(consH * 0.15 / 500) * 500) + (rows.closeH || 0);
+    rows.push({name:"Project Management", note:"including weekly client calls & meetings, email correspondence & advisory, budget reviews, resource management, etc.", a:pmL, z:pmH}); totL += pmL; totH += pmH;
+  }
+  return {rows, totL, totH};
+}
+function tableHTML(res){
+  const th = s => `<th style="background:#196972;color:#fff;text-align:left;padding:6px 10px;font:700 13px Arial,sans-serif;border:1px solid #196972">${s}</th>`;
+  const td = (s, x="") => `<td style="padding:6px 10px;border:1px solid #C6CFD6;font:13px Arial,sans-serif;color:#16222B;vertical-align:top;${x}">${s}</td>`;
+  let h = `<table style="border-collapse:collapse;max-width:760px;width:100%"><thead><tr>${th("Deliverable")}${th("Estimated Cost")}</tr></thead><tbody>`;
+  for (const r of res.rows) h += `<tr>${td(`<b>${esc(r.name)}</b><br><span style="color:#5A6872">(${esc(r.note)})</span>`)}${td(rng(r.a, r.z), "white-space:nowrap")}</tr>`;
+  h += `<tr>${td("<b>Total</b>", "text-align:right;background:#E9F5F6")}${td(`<b>${rng(res.totL, res.totH)}</b>`, "white-space:nowrap;background:#E9F5F6")}</tr></tbody></table>`;
+  h += `<p style="font:12px Arial,sans-serif;color:#5A6872;max-width:760px">This is a preliminary range based on our current understanding of the project. A detailed proposal will confirm the scope and pricing.</p>`;
+  if (SENDER) h += `<p style="font:13px Arial,sans-serif;color:#16222B">Best,<br>${esc(SENDER)}</p>`;
+  return h;
+}
+function textVersion(res){
+  const L = res.rows.map(r => `${r.name} (${r.note}): ${rng(r.a, r.z)}`);
+  L.push(`Total: ${rng(res.totL, res.totH)}`, "", "This is a preliminary range based on our current understanding of the project. A detailed proposal will confirm the scope and pricing.");
+  if (SENDER) L.push("", "Best,", SENDER);
+  return L.join("\n");
+}
+let RES = null;
+function renderGroups(){
+  byId("grows").innerHTML = G.map((g, i) => `<tr><td><select aria-label="Participant type" data-g="${i}" data-f="t">${Object.keys(TYPES).map(t => `<option ${t === g.t ? "selected" : ""}>${t}</option>`).join("")}</select></td>
+    <td><input type="number" min="0" aria-label="Participants needed" data-g="${i}" data-f="n" value="${esc(g.n)}"></td>
+    <td>${(g._c || !["0.5","1","1.5","2","2.5","3","3.5","4"].includes(String(g.sh))) ? `<span style="display:flex;gap:4px;align-items:center"><input type="number" min="0.25" step="0.25" style="width:80px" aria-label="Session length (type hours)" data-g="${i}" data-f="sh" value="${esc(g.sh)}"><button class="x" type="button" data-glist="${i}" title="Back to the list" aria-label="Back to the list" style="font-size:.8rem">&#x25be; List</button></span>` : `<select aria-label="Session length" data-g="${i}" data-f="sh">${["0.5","1","1.5","2","2.5","3","3.5","4"].map(v => `<option ${String(g.sh) === v ? "selected" : ""}>${v}</option>`).join("")}<option value="__other">Other (type hours)&hellip;</option></select>`}</td>
+    <td><button class="x" type="button" data-del="${i}" aria-label="Remove group">&#x2715;</button></td></tr>`).join("");
+}
+function renderDL(){ byId("dlv").innerHTML = DL.map(d => `<label><input type="checkbox" data-d="${d.id}" ${SEL.has(d.id) ? "checked" : ""}> ${esc(d.label)}</label>`).join(""); }
+function render(){
+  byId("grpBox").hidden = !byId("study").value; byId("sender").value = SENDER;
+  RES = build();
+  byId("out").innerHTML = RES.rows.length ? tableHTML(RES) : `<p style="color:#5A6872;margin:0">Choose a study type or at least one deliverable to see a range.</p>`;
+  save();
+}
+document.addEventListener("change", e => { const t = e.target;
+  if (t.dataset.g !== undefined && t.value === "__other"){ const gi = +t.dataset.g; G[gi]._c = true; renderGroups(); const n = document.querySelector(`input[data-g="${gi}"][data-f="sh"]`); if (n){ n.value = ""; n.focus(); } return; }
+  if (t.dataset.g !== undefined){ G[+t.dataset.g][t.dataset.f] = t.value; }
+  else if (t.dataset.d){ t.checked ? SEL.add(t.dataset.d) : SEL.delete(t.dataset.d); }
+  render(); });
+document.addEventListener("input", e => { if (e.target.id === "sender"){ SENDER = e.target.value; RES = build(); byId("out").innerHTML = RES.rows.length ? tableHTML(RES) : byId("out").innerHTML; save(); } });
+document.addEventListener("click", e => {
+  if (e.target.id === "addg"){ G.push({t:"Patients / lay users", n:8, sh:"1"}); renderGroups(); render(); }
+  const gl = e.target.closest("[data-glist]"); if (gl){ const g = G[+gl.dataset.glist]; g._c = false; if (!["0.5","1","1.5","2","2.5","3","3.5","4"].includes(String(g.sh))) g.sh = "1"; renderGroups(); render(); return; }
+  const d = e.target.closest("[data-del]"); if (d){ G.splice(+d.dataset.del, 1); renderGroups(); render(); }
+});
+byId("copy").onclick = async () => {
+  const m = byId("msg");
+  try { await navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([tableHTML(RES)], {type:"text/html"}), "text/plain": new Blob([textVersion(RES)], {type:"text/plain"})})]); m.textContent = "Copied. Paste into your email."; }
+  catch (_) { const r = document.createRange(); r.selectNode(byId("out")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); m.textContent = "Your browser blocked copying. The table is selected: press Ctrl+C / Cmd+C."; }
+  setTimeout(() => m.textContent = "", 4000);
+};
+renderGroups(); renderDL(); render();
+</script>
+
+</body></html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposal Assistant (portfolio demo)</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+.tool-bar{height:34px;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:0 24px;background:#FAFAFA var(--page-grad) fixed}
+.tool-bar .back-link{margin:0 !important;padding:0 !important;width:auto !important;line-height:1}
+.tool-bar .primary-btn{margin:0 !important;padding:3px 12px !important;font-size:13px;line-height:1.2}
+/* Keep the header (logo = home) and the Back button visible while scrolling */
+.app-header{position:sticky !important;top:0;z-index:1000}
+.view > .back-link{display:block;width:100%;text-align:left;position:sticky;top:var(--header-h,64px);z-index:900;background:#FAFAFA var(--page-grad) fixed;padding-top:8px;padding-bottom:8px;margin-top:0}
+</style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-home-link" id="header-home-link" role="button" tabindex="0" aria-label="Go to home screen">
+      <img src="logo-white.svg" alt="Acme HF" class="brand-logo">
+      <div class="subtitle">Proposal Assistant</div>
+    </div>
+    <span id="signed-in-as" class="signed-in-as" hidden></span>
+  </header>
+  <section id="view-login" class="view">
+    <h1>Sign in</h1>
+    <p class="login-desc">Demo sign-in is switched off.</p>
+    <form id="login-form">
+      <label>Email address
+        <input type="email" name="email" placeholder="you@example.com" required>
+      </label>
+      <div id="login-error" class="login-error" hidden>Please enter a valid email address.</div>
+      <button type="submit" class="primary-btn">Continue</button>
+    </form>
+  </section>
+  <main id="view-home" class="view" hidden>
+    <p class="welcome-line">What are you working on today?</p>
+    <h1 class="home-heading">Proposal Assistant</h1><p class="demo-banner" style="margin:0 0 18px;padding:10px 14px;border:1px solid var(--border);border-left:4px solid var(--pink);border-radius:8px;background:#fff;font-size:14px;color:var(--text-muted);">Portfolio demo by Cory Zavod. Everything here is fictional: the company (Acme HF), clients, people, proposals and rates are invented, and nothing is sent anywhere. The tools run in your browser.</p>
+    <p id="home-stats" class="home-stats"></p>
+<section class="home-section">
+    <h2 class="home-section-title">Proposal drafting</h2>
+    <p class="home-section-sub">Draft a proposal prompt for Claude, or find similar past proposals.</p>
+    <div class="card-grid">
+<button class="big-card" id="btn-draft" type="button">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Draft proposal</span>
+        <span class="card-desc">Build the Cowork prompt for the drafting skill from your intake answers, RFQ notes and past proposals</span>
+      </button>
+<button class="big-card" id="btn-search" type="button">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M21 21l-5.5-5.5"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Find similar proposals</span>
+        <span class="card-desc">Paste an RFQ or request and get a prompt that finds the closest past proposals in Claude</span>
+      </button>
+    </div>
+    </section>
+<section class="home-section">
+    <h2 class="home-section-title">Proposal process tools</h2>
+    <p class="home-section-sub">Follow these in order: SME intake, then Comm Ops intake. The rest support pricing and timelines.</p>
+    <div class="card-grid">
+<button class="big-card" type="button" data-tool="tool-sme-intake.html" data-title="SME intake">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">SME intake</span>
+        <span class="card-desc">Step 1: the SME answers study scope and design questions, then copies the result for Comm Ops</span>
+      </button>
+<button class="big-card" type="button" data-tool="tool-comm-ops-intake.html" data-title="Comm Ops intake">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Comm Ops intake</span>
+        <span class="card-desc">Step 2: import the SME answers, add commercial inputs, and copy the final answers for Claude</span>
+      </button>
+<button class="big-card" id="btn-pricing-calc" type="button">
+  <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+  <span class="card-accent"></span>
+  <span class="card-title">Study pricing calculator</span>
+  <span class="card-desc">Study Pricing Calculator (v3.35): detailed study cost estimate with consulting, facility, recruitment, and pass-through costs</span>
+</button>
+<button class="big-card" type="button" data-tool="tool-timeline-inputs.html" data-title="Timeline tool inputs">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Timeline tool inputs</span>
+        <span class="card-desc">Answer a few questions to set up a proposal timeline without an intake form</span>
+      </button>
+<button class="big-card" type="button" data-tool="tool-timeline-builder.html" data-title="Proposal timeline builder">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Proposal timeline builder</span>
+        <span class="card-desc">Build and edit the week-by-week timeline for a SOW or deck</span>
+      </button>
+<button class="big-card" type="button" data-tool="tool-ballpark.html" data-title="Ballpark quote builder">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Ballpark quote builder</span>
+        <span class="card-desc">Low and high price ranges from a few inputs, formatted for email</span>
+      </button>
+    </div>
+    </section>
+<section class="home-section">
+    <h2 class="home-section-title">Everything else</h2>
+    <p class="home-section-sub">Reference tools, the sample proposal database and team scheduling.</p>
+    <div class="card-grid">
+
+<button class="big-card" id="btn-schedule" type="button">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Proposal status &amp; team schedule</span>
+        <span class="card-desc">See everyone's proposal due dates and SME review status in one place</span>
+      </button>
+<button class="big-card" id="btn-browse-db" type="button">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Browse proposal database</span>
+        <span class="card-desc">Browse and filter every proposal in the full index; titles open in your browser</span>
+      </button>
+<button class="big-card" id="btn-add-proposal" type="button">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Add or correct a proposal</span>
+        <span class="card-desc">Get a missing file added before the next weekly scan, or correct an entry's tags</span>
+      </button>
+<button class="big-card" id="btn-howto" type="button">
+  <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+  <span class="card-accent"></span>
+  <span class="card-title">How to use this site</span>
+  <span class="card-desc">Step-by-step: SME intake, Comm Ops intake, then drafting in Cowork with the Claude skill</span>
+</button>
+    </div>
+    </section>
+  </main>
+  <section id="view-draft" class="view" hidden>
+    <button class="back-link" id="back-from-draft" type="button">&larr; Back</button>
+    <h1>Draft a proposal</h1>
+    <p class="login-desc">This builds the prompt for the drafting skill in Cowork. Complete the SME intake and the Comm Ops intake first: the skill uses their final answers to price the proposal and build the draft.</p>
+    <form id="draft-form">
+      <label>What do you want drafted?
+        <select name="proposalType" id="draft-proposalType" required>
+          <option value="" disabled selected>Select proposal type</option>
+          <option value="sow">Word SOW</option>
+          <option value="ppt">PowerPoint proposal</option>
+          <option value="ballpark">Ballpark quote</option>
+          <option value="amendment">Amendment / change order</option>
+        </select>
+      </label>
+      <div id="draft-type-hint" class="output" hidden></div>
+      <div id="draft-tool-links" style="display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px;">
+        <button type="button" class="quiz-option-btn" data-tool="tool-sme-intake.html" data-title="SME intake">Open SME intake</button>
+        <button type="button" class="quiz-option-btn" data-tool="tool-comm-ops-intake.html" data-title="Comm Ops intake">Open Comm Ops intake</button>
+        <button type="button" class="quiz-option-btn" data-tool="tool-ballpark.html" data-title="Ballpark quote builder">Open Ballpark quote builder</button>
+      </div>
+      <label><span id="draft-intake-label">Comm Ops intake final answers</span>
+        <textarea name="pricingInputs" id="draft-pricingInputs" rows="6" placeholder="Paste the text from the Comm Ops intake's &quot;Copy final answers for Claude&quot; button. It ends with TIMELINE-DATA and PROPOSAL-DATA lines. The skill decodes it and prices the proposal with the Study Pricing Calculator code."></textarea>
+      </label>
+      <label>RFQ or discovery-call notes (optional for a SOW or deck, required for an amendment)
+        <textarea name="scope" id="draft-scope" rows="5" placeholder="Paste the client's request or your call notes. It is used for the Project Overview and to find similar past proposals. Do not include identifiable patient data."></textarea>
+      </label>
+      <label>Client status (optional)
+        <select name="clientStatus" id="draft-clientStatus">
+          <option value="" selected>Not sure / already in the intake</option>
+          <option value="new">New client</option>
+          <option value="existing">Existing client</option>
+        </select>
+      </label>
+      <label>Is this your first proposal today?
+        <select name="firstToday" id="draft-firstToday">
+          <option value="yes" selected>Yes (no number on the file name)</option>
+          <option value="2">No, this is my 2nd today</option>
+          <option value="3">No, this is my 3rd today</option>
+          <option value="4">No, this is my 4th today</option>
+          <option value="5">No, this is my 5th today</option>
+        </select>
+      </label>
+      <label>Past proposals to reference (optional)
+        <textarea name="referencedProposals" id="draft-referencedProposals" rows="3" placeholder="Auto-fills when you carry over matches from Find similar proposals. You can also paste IDs or titles you found yourself. The skill searches the full proposal index anyway and adds anything closer."></textarea>
+      </label>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="primary-btn">Prepare draft prompt</button>
+        <button type="reset" class="quiz-option-btn" id="draft-reset">Clear form</button>
+      </div>
+    </form>
+    <div id="draft-output" class="output" hidden></div>
+  </section>
+  
+<section id="view-search" class="view" hidden>
+    <button class="back-link" id="back-from-search" type="button">&larr; Back</button>
+    <h1>Find similar proposals</h1>
+    <p class="login-desc">Search the site's proposal database first - it's instant. For a deeper look across the full proposal index, including slide-level text, use the Claude search skill option that appears with your results.</p>
+    <form id="search-form">
+      <label>Deliverable type
+        <select name="deliverableType" id="search-deliverableType">
+          <option value="" selected>Any deliverable type</option>
+          <option value="Ballpark quote">Ballpark quote</option>
+          <option value="PowerPoint proposal">PowerPoint proposal</option>
+          <option value="Word SOW">Word SOW</option>
+          <option value="Amendment / change order">Amendment / change order</option>
+        </select>
+      </label>
+      <label>Industry / device category
+        <input type="text" name="industry" id="search-industry" placeholder="e.g. Medtech - cardiology">
+      </label>
+      <label>Client status
+        <select name="clientStatus" id="search-clientStatus">
+          <option value="" selected>Any client status</option>
+          <option value="New client">New client</option>
+          <option value="Existing client">Existing client</option>
+        </select>
+      </label>
+      <label>Pricing model
+        <select name="pricingModel" id="search-pricingModel">
+          <option value="" selected>Any pricing model</option>
+          <option value="Time and materials">Time and materials</option>
+          <option value="Fixed fee">Fixed fee</option>
+          <option value="Mix of both">Mix of both</option>
+        </select>
+      </label>
+      <label>Study type
+        <input type="text" name="studyType" id="search-studyType" placeholder="e.g. Formative evaluation">
+      </label>
+      <label>RFQ, request details, or scope notes
+        <textarea name="query" id="search-query" rows="5" placeholder="Paste the RFQ, or describe the project"></textarea>
+      </label>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="primary-btn">Search database</button>
+        <button type="reset" class="quiz-option-btn" id="search-reset">Clear form</button>
+      </div>
+    </form>
+    <div class="broaden-search-box" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <p style="margin:0 0 10px;">Want a deeper search of the full index (slide text included) in Claude?</p>
+      <button type="button" class="quiz-option-btn" id="broaden-search-btn" disabled>Search with Claude's search skill</button>
+      <p id="broaden-search-hint" class="login-desc" style="margin-top:6px;">Search the database above first to enable this.</p>
+      <div id="search-handoff-output" style="margin-top:10px;" hidden></div>
+    </div>
+    <div id="search-results" class="output" hidden></div>
+    <div class="use-in-draft-box" id="use-in-draft-box" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);" hidden>
+      <p style="margin:0 0 10px;">Found a good match? Carry these matches over to the draft proposal tool.</p>
+      <button type="button" class="primary-btn" id="use-in-draft-btn">Use these matches in draft proposal</button>
+    </div>
+  </section>
+  
+  <section id="view-process" class="view" hidden>
+    <button class="back-link" id="back-from-process" type="button">&larr; Back</button>
+    <h1>Process reference</h1>
+    <div id="process-list"></div>
+  </section>
+  <section id="view-howto" class="view" hidden>
+  <button class="back-link" id="back-from-howto" type="button">&larr; Back</button>
+  <h1>How to use this site</h1>
+  <p class="login-desc">The proposal workflow from RFQ to reviewed draft: SME intake &rarr; Comm Ops intake &rarr; Cowork with the drafting skill. Use the "Go to" buttons to jump straight to a step or tool.</p>
+  <div class="setup-card"><h2>About this demo</h2><p>This is a portfolio version of an internal proposal-drafting assistant. The company, clients, people and prices are fictional, and the proposal database holds sample entries only. In the original, the site hands structured intake answers to AI skills that search a proposal index and draft Word and PowerPoint proposals. Here, the prompt builders still run so you can see what they produce, but there is no index folder or AI skill behind them.</p><p class="setup-note">Try this: open SME intake, fill in a few answers, copy the result, then paste it into Comm Ops intake.</p></div>
+  <div id="howto-list"></div>
+  <h2 style="margin-top:32px;">Other tools on this site</h2>
+  <div id="howto-tools-list"></div>
+</section>
+  <section id="view-browse-db" class="view" hidden>
+    <button class="back-link" id="back-from-browse-db" type="button">&larr; Back</button>
+    <h1>Proposal database</h1>
+    <div style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px; margin:8px 0 12px;">
+      <label style="flex:2 1 260px; min-width:220px;">Search (client, title, summary, tags)
+        <input type="text" id="browse-text" placeholder="e.g. Acme autoinjector">
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Year
+        <select id="browse-filter-year"><option value="">All</option></select>
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Kind
+        <select id="browse-filter-kind"><option value="">All</option></select>
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Device type
+        <select id="browse-filter-device"><option value="">All</option></select>
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Therapeutic area
+        <select id="browse-filter-area"><option value="">All</option></select>
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Study type
+        <select id="browse-filter-study"><option value="">All</option></select>
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Deal size
+        <select id="browse-filter-dealsize"><option value="">All</option></select>
+      </label>
+      <label style="flex:1 1 150px; min-width:150px;">Sort by
+        <select id="browse-sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="client">Client A to Z</option><option value="title">Title A to Z</option></select>
+      </label>
+      <button type="button" id="browse-filter-clear" class="quiz-option-btn">Clear filters</button>
+      <button type="button" id="browse-export" class="quiz-option-btn">Download CSV</button>
+    </div>
+    <label style="display:block;margin-bottom:12px;"><input type="checkbox" id="browse-all-versions"> Show drafts and other versions too</label>
+    <p id="browse-count" class="browse-count"></p>
+    <div id="browse-list"></div>
+  </section>
+  <section id="view-pricing-calc" class="view" hidden style="max-width:none; padding:0;">
+  <div class="tool-bar" style="justify-content:space-between;">
+  <button class="back-link" id="back-from-pricing-calc" type="button">&larr; Back</button>
+  <button class="primary-btn" id="open-rate-card" type="button">View Master Rate Card</button>
+</div>
+  <iframe src="pricing-calculator.html" style="width:100%; height:calc(100vh - var(--header-h,86px) - 34px); border:none; display:block;"></iframe>
+</section>
+  <section id="view-tool" class="view" hidden style="max-width:none; padding:0;">
+    <div class="tool-bar">
+      <button class="back-link" id="back-from-tool" type="button">&larr; Back</button>
+    </div>
+    <iframe id="tool-frame" title="Tool" allow="clipboard-write; clipboard-read" style="width:100%; height:calc(100vh - var(--header-h,86px) - 34px); border:none; display:block;"></iframe>
+  </section>
+  <section id="view-add-proposal" class="view" hidden>
+    <button class="back-link" id="back-from-add" type="button">&larr; Back</button>
+    <h1>Add or correct a proposal in the database</h1>
+    <p class="login-desc">The proposal database is built from a shared Proposals folder, and a weekly scan adds new files automatically. Use this form to get a file added before the next scan, or to fix the tags on an existing entry. It prepares a request for the person who maintains the index; nothing is changed until it is run.</p>
+    <form id="add-proposal-form">
+      <label>What do you need?
+        <select name="mode" id="add-mode">
+          <option value="add">Add a document that is missing</option>
+          <option value="correct">Correct an existing entry</option>
+        </select>
+      </label>
+      <label id="add-id-row" hidden>Existing entry ID (PRO-... or CNT-...)
+        <input type="text" name="id" id="add-id" placeholder="e.g. PRO-2025-123 (copy it from Browse proposal database)">
+      </label>
+      <label>Document title or file name
+        <input type="text" name="title" placeholder="e.g. 2026 Oct 12 Acme Autoinjector Validation SOW.docx" required>
+      </label>
+      <label>Client
+        <input type="text" name="client" placeholder="e.g. Acme Medical">
+      </label>
+      <label>Document link or folder path
+        <input type="text" name="sourceUrl" placeholder="Paste the document link, or the path inside the Proposals folder" required>
+      </label>
+      <label>Document date (optional)
+        <input type="text" name="date" placeholder="e.g. 2026-10-12">
+      </label>
+      <label>Kind of document
+        <select name="kind">
+          <option value="">Not sure</option>
+          <option>PowerPoint proposal</option>
+          <option>Word SOW</option>
+          <option>Amendment / change order</option>
+          <option>Ballpark quote / estimate</option>
+          <option>Client request (RFP, RFQ, RFI)</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label>Device type (optional)
+        <input type="text" name="device" placeholder="e.g. Autoinjector">
+      </label>
+      <label>Therapeutic area (optional)
+        <input type="text" name="area" placeholder="e.g. Diabetes">
+      </label>
+      <label>Study type (optional)
+        <input type="text" name="study" placeholder="e.g. Summative evaluation">
+      </label>
+      <label>Proposal structure / pricing model (optional)
+        <input type="text" name="structure" placeholder="e.g. Fixed fee, two phases">
+      </label>
+      <label>Notes
+        <textarea name="notes" rows="3" placeholder="Anything the index owner should know: the outcome (won, lost, pending), which version is final, a duplicate of another entry, what is wrong with the current tags."></textarea>
+      </label>
+      <button type="submit" class="primary-btn">Prepare request</button>
+    </form>
+    <div id="add-proposal-output" class="output" hidden></div>
+  </section>
+  
+<section id="view-redact" class="view" hidden>
+    <button class="back-link" id="back-from-redact" type="button">&larr; Back</button>
+    <h1>De-identify an RFQ</h1>
+    <p class="login-desc">Everything on this page runs in your browser only - nothing is sent anywhere, not even to Claude. Paste an RFQ below to scan it for likely client names, organization names, model/part numbers, and sentences that may reference proprietary or confidential information. This is a rough first-pass scan meant to speed up your own review - it will over-flag common phrases, so use your judgment on what actually needs to change. As a rule, the two things that must come out before this text goes to Claude are client names and trade secrets.</p>
+    <p class="redact-tip"><strong>Tip:</strong> If you're copying text from a PDF, use the <strong>Print</strong> button to open the print preview, then copy the text from there instead of the default PDF view. Text copied from print preview keeps its original order and reads much more cleanly than text copied straight out of a normal PDF viewer.</p>
+    <form id="redact-form">
+      <label for="redact-client-name" style="display:block;margin-bottom:6px;font-weight:600;">
+        Client name (optional)
+      </label>
+      <input
+        type="text"
+        id="redact-client-name"
+        name="clientName"
+        placeholder="e.g. Acme Devices"
+        style="width:100%;margin-bottom:16px;padding:8px;border:1px solid var(--border, #ccc);border-radius:6px;"
+      >
+      <label>Paste the RFQ text
+        <textarea name="rfqText" id="redact-input" rows="10" placeholder="Paste the full RFQ text here"></textarea>
+      </label>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="primary-btn">Scan for identifying info</button>
+        <button type="reset" class="quiz-option-btn" id="redact-reset">Clear</button>
+      </div>
+    </form>
+    <div id="redact-output" hidden>
+      <div class="output" id="redact-highlighted" style="margin-top:24px;"></div>
+      <div id="redact-flagged-sentences" style="margin-top:16px;"></div>
+      <div id="redact-term-list-box" style="margin-top:20px;" hidden>
+  <p style="margin:0 0 8px; font-weight:600;">Flagged terms - choose what to remove from the copy below:</p>
+  <label class="redact-term-row" style="margin-bottom:10px;">
+    <input type="checkbox" id="redact-select-all" checked>
+    <span>Select all</span>
+  </label>
+  <div id="redact-term-list" class="redact-term-box"></div>
+  <button type="button" class="quiz-option-btn" id="redact-apply-removals-btn" style="margin-top:10px;">Apply selected removals to text below</button>
+</div>
+      <label style="margin-top:20px;">Edit this copy to remove or generalize anything flagged
+        <textarea id="redact-working" rows="10"></textarea>
+      </label>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <button type="button" class="primary-btn" id="redact-copy-btn">Copy cleaned text</button>
+        <button type="button" class="quiz-option-btn" id="redact-use-in-draft-btn">Use in draft proposal</button>
+        <button type="button" class="quiz-option-btn" id="redact-use-in-search-btn">Use in find similar proposals</button>
+        <button type="button" class="quiz-option-btn" id="redact-clear-page-btn">Clear page</button>
+      </div>
+      <div id="redact-copy-confirm" class="login-desc" style="margin-top:8px;" hidden></div>
+    </div>
+  </section>
+  <section id="view-schedule" class="view" hidden>
+    <button class="back-link" id="back-from-schedule" type="button">&larr; Back</button>
+    <h1>Proposal status &amp; team schedule</h1>
+    <p class="login-desc">Shows every teammate's proposal due dates and SME review status in one place, so work isn't accidentally piled onto one person and deadlines don't get missed. In this demo the schedule is stored in your own browser only (sample teammates are pre-loaded), so nothing is shared. In the original it synced live for the whole team.</p>
+    <div id="schedule-account-box"></div>
+    <div id="schedule-main" hidden>
+      <button type="button" class="primary-btn" id="schedule-edit-my-btn" style="margin-top:16px;">Edit my schedule</button>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:24px;">
+        <h2 style="margin:0;">Everyone's schedule</h2>
+        <button type="button" class="quiz-option-btn" id="schedule-refresh-btn">Refresh now</button>
+      </div>
+      <p id="schedule-sync-note" class="login-desc" style="margin-top:6px;" hidden></p>
+      <div class="schedule-view-toggle">
+        <button type="button" id="schedule-view-list-btn" class="quiz-option-btn">List view</button>
+        <button type="button" id="schedule-view-calendar-btn" class="quiz-option-btn">Calendar view</button>
+      </div>
+      <div id="schedule-board"></div>
+      <div id="schedule-calendar" hidden>
+        <div class="schedule-cal-nav">
+          <button type="button" id="schedule-cal-prev-btn" class="quiz-option-btn">&larr; Prev</button>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h3 id="schedule-cal-month-label" style="margin:0;"></h3>
+            <select id="schedule-cal-range-select">
+              <option value="week">Weekly</option>
+              <option value="month" selected>Monthly</option>
+              <option value="year">Yearly</option>
+            </select>
+          </div>
+          <button type="button" id="schedule-cal-next-btn" class="quiz-option-btn">Next &rarr;</button>
+        </div>
+        <div id="schedule-cal-grid" class="schedule-cal-grid"></div>
+        <div id="schedule-cal-modal" class="schedule-cal-modal" hidden>
+          <div class="schedule-cal-modal-content">
+            <button type="button" id="schedule-cal-modal-close" class="schedule-cal-modal-close">&times;</button>
+            <div id="schedule-cal-modal-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="view-schedule-edit" class="view" hidden>
+    <button class="back-link" id="back-from-schedule-edit" type="button">&larr; Back</button>
+    <h1>Edit my schedule</h1>
+    <h2 style="margin-top:24px;">Add to my schedule</h2>
+    <form id="schedule-entry-form">
+      <label>Proposal title
+        <input type="text" name="proposalTitle" id="schedule-proposalTitle" placeholder="e.g. Acme Devices - Formative Study" required maxlength="200">
+      </label>
+      <label>Proposal reference (optional)
+        <input type="text" name="proposalRef" id="schedule-proposalRef" placeholder="e.g. REF-2026-001" maxlength="80">
+      </label>
+      <label>Task type
+        <select name="taskType" id="schedule-taskType" required>
+          <option value="" disabled selected>Select task type</option>
+          <option value="Drafting">Drafting</option>
+          <option value="SME Review">SME Review</option>
+          <option value="Client Follow-up">Client Follow-up</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+      <label>Due date
+        <input type="date" name="dueDate" id="schedule-dueDate" required>
+      </label>
+      <label>Status
+        <select name="status" id="schedule-status" required>
+          <option value="Not started">Not started</option>
+          <option value="In progress">In progress</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </label>
+      <label>Notes (optional)
+        <textarea name="notes" id="schedule-notes" rows="3" maxlength="500" placeholder="Anything teammates should know"></textarea>
+      </label>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="primary-btn" id="schedule-submit-btn">Add to my schedule</button>
+        <button type="button" class="quiz-option-btn" id="schedule-cancel-edit-btn" hidden>Cancel edit</button>
+      </div>
+    </form>
+    <h2 style="margin-top:32px;">My schedule items</h2>
+    <div id="schedule-my-entries" style="margin-top:16px;"></div>
+  </section>
+  <section id="view-rate-card" class="view" hidden>
+  <div style="padding:16px 24px 0;">
+    <button class="back-link" id="back-from-rate-card" type="button">&larr; Back</button>
+  </div>
+  <div style="padding:8px 24px 48px; max-width:960px; margin:0 auto;">
+    <h1>Master Rate Card</h1>
+    <div id="rate-card-content"></div>
+  </div>
+</section>
+  <footer class="app-footer">
+    Portfolio demo by Cory Zavod. Fictional company and data.
+  </footer>
+  <script src="demo-backend.js"></script>
+  <script src="rates.js"></script>
+  <script src="app.js"></script>
+     <script src="tron-easter-egg.js" defer></script>
+</body>
+</html>

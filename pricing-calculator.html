@@ -1,0 +1,476 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Acme HF Study Pricing Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two panes. Left = numbered input sections (one per line item), right = sticky live cost summary. */
+:root{
+  --bg:#F5F8FA; --surface:#FFFFFF; --sunk:#ECF4F5; --fg:#15242E; --muted:#5A6974; --line:#D8E5E6;
+  --navy:#0C273A; --purple:#196972; --pink:#F4B782; --pink-ink:#9C5F2A; --input:#FFFBE6; --input-line:#E6D98A;
+  --warn-bg:#FDF2E9; --warn-fg:#7A491F;
+  --f-display:"Sora", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D171F; --surface:#16232C; --sunk:#1E2D38; --fg:#EAF1F6; --muted:#A2B2BE; --line:#2C3E4B;
+  --navy:#C6E0F2; --purple:#9BE0E8; --pink:#F4B782; --pink-ink:#F6CBA6; --input:#262240; --input-line:#4F6F86;
+  --warn-bg:#17363A; --warn-fg:#F7DCC4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D171F; --surface:#16232C; --sunk:#1E2D38; --fg:#EAF1F6; --muted:#A2B2BE; --line:#2C3E4B;
+  --navy:#C6E0F2; --purple:#9BE0E8; --pink:#F4B782; --pink-ink:#F6CBA6; --input:#262240; --input-line:#4F6F86;
+  --warn-bg:#17363A; --warn-fg:#F7DCC4; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--pink);padding-bottom:14px}
+.logo{background:#fff;border-radius:6px;padding:6px 10px;display:inline-flex}
+.logo img{height:30px;width:auto;display:block}
+h1{font:600 1.45rem/1.2 var(--f-display);color:var(--navy);margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:.9rem;margin:2px 0 0}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
+.banner{background:var(--warn-bg);color:var(--warn-fg);border-left:4px solid var(--pink);padding:10px 14px;border-radius:4px;font-size:.92rem}
+details.sec{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+details.sec + details.sec{margin-top:12px}
+summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:12px 16px}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.num{font:600 .8rem var(--f-mono);color:var(--surface);background:var(--purple);border-radius:4px;padding:2px 7px;min-width:28px;text-align:center}
+.stitle{font:600 1rem var(--f-display);color:var(--fg);flex:1;min-width:0}
+.chip{font:500 .9rem var(--f-mono);font-variant-numeric:tabular-nums;color:var(--pink-ink);white-space:nowrap}
+.caret{color:var(--muted);transition:transform .15s}
+details[open] .caret{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.caret{transition:none}}
+.body{padding:4px 16px 16px;display:grid;gap:14px;border-top:1px solid var(--line)}
+.grp{display:grid;gap:8px}
+.grp h3{font:600 .75rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--purple);margin:10px 0 0}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:6px 14px;align-items:center}
+@media (max-width:520px){.row{grid-template-columns:minmax(0,1fr)}}
+.row label{font-size:.95rem}
+.row .hint{grid-column:1/-1;font-size:.82rem;color:var(--muted);margin-top:-4px}
+input,select{font:inherit;font-size:.95rem;width:100%;padding:6px 8px;border:1px solid var(--input-line);background:var(--input);color:var(--fg);border-radius:4px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--pink);outline-offset:1px}
+.calc{display:flex;justify-content:space-between;gap:12px;font-size:.9rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}
+.calc b{font:500 .9rem var(--f-mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.result{display:flex;justify-content:space-between;gap:12px;align-items:baseline;background:var(--sunk);border-left:3px solid var(--pink);padding:8px 12px;border-radius:4px}
+.result span{font-weight:600;color:var(--navy)}
+.result b{font:600 1rem var(--f-mono);font-variant-numeric:tabular-nums;color:var(--navy)}
+.logic{font-size:.84rem;color:var(--muted);margin:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:.88rem}
+th{background:var(--navy);color:var(--bg);font-weight:600;text-align:left;padding:6px;font-size:.78rem}
+td{border-bottom:1px solid var(--line);padding:4px;vertical-align:middle}
+td.o{font-family:var(--f-mono);text-align:center;font-variant-numeric:tabular-nums}
+td input,td select{padding:4px 6px}
+button{font:inherit;font-size:.88rem;border:1px solid var(--purple);color:var(--purple);background:transparent;border-radius:4px;padding:5px 10px;cursor:pointer}
+button:hover{background:var(--sunk)}
+.x{border:none;color:var(--muted);padding:2px 6px}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:grid;gap:12px}
+@media (max-width:900px){aside{position:static}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.panel h2{font:600 1rem var(--f-display);color:var(--navy);margin:0 0 8px}
+.sum{display:grid;gap:2px;font-size:.88rem}
+.sum .cat{font-weight:700;color:var(--purple);margin-top:8px;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+.sum .l{display:flex;justify-content:space-between;gap:10px}
+.sum .l.zero{color:var(--muted);opacity:.6}
+.sum .l b,.sum .st b{font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sum .st{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:3px;font-weight:600}
+.grand{display:flex;justify-content:space-between;align-items:baseline;background:var(--navy);color:var(--bg);border-radius:6px;padding:10px 12px;margin-top:10px}
+.grand b{font:600 1.25rem var(--f-mono);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:99px;background:var(--warn-bg);color:var(--warn-fg);margin-left:6px;vertical-align:1px}
+ol.open{margin:0;padding-left:20px;font-size:.86rem;display:grid;gap:4px}
+.rates{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px 16px}
+.rates .row{grid-template-columns:minmax(0,1fr) 100px}
+.foot{font-size:.8rem;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <span class="logo"><img alt="Acme HF" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCAzMDAgNjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iQWNtZSBIRiBsb2dvIj48cmVjdCB4PSIyIiB5PSI4IiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMiIgZmlsbD0iIzFGOEE5OSIvPjxwYXRoIGQ9Ik0xNCA0MiBMMjYgMTQgTDM4IDQyIE0xOSAzNCBIMzMiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSI2MiIgeT0iMzEiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEwMzI0QSI+QWNtZSBIRjwvdGV4dD48dGV4dCB4PSI2MyIgeT0iNTAiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjIuMiIgZmlsbD0iIzFGOEE5OSI+SFVNQU4gRkFDVE9SUzwvdGV4dD48L3N2Zz4="></span>
+      <div><h1>Study Pricing Calculator</h1><p class="sub">Draft v3.34 &#xb7; participants priced at net + 20% over-recruit &#xb7; +10% markup on hour-based tasks (nearest $200) &#xb7; inputs grouped by line item &#xb7; USD &#xb7; example scenario loaded</p></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="cmExport" type="button">Copy for Claude (Word SOW)</button><button id="reset" type="button">Reset to example</button></div>
+  </header>
+  <div class="banner" id="dyadBanner" hidden><strong>Reminder:</strong> dyad/triad now adjusts session days, conduct, facilitator, and analysis. Study prep, screeners, and the report are not dyad-aware yet.</div>
+  <div class="layout">
+    <main id="sections"></main>
+    <aside>
+      <div class="panel"><h2>Cost summary</h2><div class="sum" id="summary"></div>
+        <div class="grand"><span>Grand total</span><b id="grand">$0</b></div></div>
+      <div class="panel"><h2>Open items</h2><ol class="open" id="open"></ol></div>
+    </aside>
+  </div>
+  <p class="foot">Portfolio demo. All rates and hours are invented placeholders. Items marked as assumptions would need confirmation in real use.</p>
+</div>
+
+<script>
+const RATES_DEFAULT={Rate:176,DayHrs:8,RecRate:80,FacRate:120,SessWindow:6.5,ConductUplift:1.2,ReviewPct:0.5,CogHrs:2,
+ OnbPeople:3,OnbStd:0.5,OnbCx:1,OnbRound:800,ScrSolidC:1,ScrSolidR:1,ScrPoorC:2,ScrPoorR:2,AgrBase:2,AgrAdd:1,
+ ProtoFormBase:4800,ProtoFormAdd:800,ProtoVSBase:6400,ProtoVSAdd:800,ProtoRevFormBase:1600,ProtoRevFormAdd:800,ProtoRevVSBase:2400,ProtoRevVSAdd:800,
+ DSCreate:1200,DSReview:600,ModBase:1600,ModPerHr:400,LogHrs:1,DemoHrs:2,HFDays:3,IRBExp:2000,IRBFull:4720,DBFee:1200,AnalysisRatio:2,
+ QSDays:2,PMMin:4000,PMRate:176,Markup:0.10,MarkupRound:200,OverRecruit:0.2,PrepAdj:0.9,RepFixed:8000,RepPax:320,RepLen:108,RepCritS:800,RepCritM:2400,RepUES:52,RepUEM:160,RepTmpl:1600,
+ FacilityDay:1600,TrainRoomDay:500,AdminFee:20,AdminFee2:40,AdminFee3:80,AdminCut1:400,AdminCut2:2000,SunshineFee:60,Subsist:100,Hotel:200,Flight:480};
+const RATE_LABELS={Rate:"Consultant $/hr",DayHrs:"Hours per day",RecRate:"Recruitment $/hr (assumed)",FacRate:"Facilitator $/hr",SessWindow:"Session hrs per study day",ConductUplift:"Conduct uplift \u00d7",ReviewPct:"Review % of creation (assumed)",CogHrs:"Cognitive bias training hrs (assumed)",
+ OnbPeople:"Onboarding staff per team",OnbStd:"Onboarding days/person (standard)",OnbCx:"Onboarding days/person (complex)",OnbRound:"Onboarding round-up to $",
+ ScrSolidC:"Screener hrs: solid draft, consultant",ScrSolidR:"Screener hrs: solid draft, recruitment",ScrPoorC:"Screener hrs: poor draft, consultant",ScrPoorR:"Screener hrs: poor draft, recruitment",AgrBase:"Agreement hrs: first group",AgrAdd:"Agreement hrs: each extra group",
+ ProtoFormBase:"Protocol create ef/lf base",ProtoFormAdd:"\u2026 per extra distinct group",ProtoVSBase:"Protocol create vs base",ProtoVSAdd:"\u2026 per extra distinct group",ProtoRevFormBase:"Protocol review ef/lf base",ProtoRevFormAdd:"\u2026 per extra distinct group",ProtoRevVSBase:"Protocol review vs base",ProtoRevVSAdd:"\u2026 per extra distinct group",
+ DSCreate:"Data sheets create /session-hr/group",DSReview:"Data sheets review /session-hr/group",ModBase:"Moderator script base /group",ModPerHr:"Moderator script per extra hr",LogHrs:"Article log hrs /group",DemoHrs:"Demographics hrs /group",
+ HFDays:"High-fidelity model days",IRBExp:"Expedited IRB",IRBFull:"Full Convened IRB",DBFee:"Database fee",AnalysisRatio:"Analysis hrs per video hr",QSDays:"Quality systems days (vs)",
+ PMMin:"PM minimum",PMRate:"PM $/hr (time-based, assumed)",Markup:"Task markup (hour/day-rate tasks)",MarkupRound:"Round marked-up tasks to $",OverRecruit:"Over-recruit buffer (worst case)",PrepAdj:"Study prep adjustment (90% = \u221210%)",RepFixed:"Report: fixed cost",RepPax:"Report: per priced participant",RepLen:"Report: per participant-hour over 1 hr",RepCritS:"Report: critical tasks Standard",RepCritM:"Report: critical tasks Many",RepUES:"Report: RCA Standard /participant",RepUEM:"Report: RCA Many /participant",RepTmpl:"Report: first-time template (assumed)",
+ FacilityDay:"Facility $/day",TrainRoomDay:"Training room $/day",AdminFee:"Payment admin fee: incentive up to cutoff 1 ($/person)",AdminFee2:"Payment admin fee: incentive over cutoff 1 up to cutoff 2 ($/person)",AdminFee3:"Payment admin fee: incentive over cutoff 2 ($/person)",AdminCut1:"Payment admin fee cutoff 1 (incentive $)",AdminCut2:"Payment admin fee cutoff 2 (incentive $)",SunshineFee:"Sunshine Act /participant",Subsist:"Subsistence /person/day",Hotel:"Hotel /person/night",Flight:"Flight /person"};
+/* Report hours per unit: [PowerPoint, Word, Word + PPT]. PROPOSED starting points. */
+const RPR_DEFAULT={Base:[8,16,22],Group:[4,8,10],Sess:[0.75,1.25,1.5],Len:[0.25,0.25,0.25],Tmpl:[8,8,8],Round:[4,8,10]};
+/* Tiered report components: hours for [Few, Standard, Many]. */
+const TIER_DEFAULT={Crit:[4,8,16],UE:[4,10,20]};
+const TIER_LABELS={Crit:"Critical tasks: extra write-up (hrs)",UE:"Use errors needing root cause analysis (hrs)"};
+const TIERS=["Few","Standard","Many"];
+const RPR_LABELS={Base:"Base setup and structure (hrs)",Group:"Per distinct user group (hrs)",Sess:"Per session, 1-hr session (hrs)",Len:"Session-length uplift per extra hr (fraction)",Tmpl:"First-time client template (hrs)",Round:"Per extra review round (hrs)"};
+const EXAMPLE={studyType:"Later Formative",teams:1,breakMin:15,format:"Individual",comboPPD:"",
+ groups:[{name:"Nurses",n:12,sh:1,distinct:"Yes",rr:200,it:80,tr:80,ppd:""},{name:"Patients",n:10,sh:1.5,distinct:"Yes",rr:120,it:60,tr:40,ppd:""}],
+ onbLevel:"Standard",hf:"No",scr:"Yes",scrDraft:"Solid client draft",scrCx:1,agr:"Yes",irb:"None",
+ prepSess:"",protoSt:"Create",protoCx:1,dsSt:"Create",modSt:"Create",logSt:"Create",demoSt:"Create",
+ setup:4,takedown:2,clientSetup:"No",clientSetupHrs:0,camera:2,dry:2,dryStaff:2,ship:0,buffer:0,pilot:"No",pilotGroups:null,pilotUpdHrs:0,mods:1,obs:1,clientObs:"No",clientObsN:1,facHrs:8,
+ rpCrit:"Standard",rpUE:"Few",rpTmpl:"No",
+ train:"No",studySite:"Acme HF facility",initFee:2400,adminOvr:"",misc:1600,devShip:0,travC:0,travSetup:0,travDays:2,travExtra:0,travTime:1,travTrans:0,
+ pm:"Yes",pmMethod:"% of consulting",pmPct:15,pmHrsWk:4,pmWeeks:16};
+const KEY="cm_calc_v4";
+const pilotFromStudy=()=>S.groups.map(g=>({name:g.name,n:"",sh:g.sh,rr:g.rr,it:g.it,tr:g.tr,sun:g.sun||"No",ppd:""}));
+const ensurePilot=()=>{if(!Array.isArray(S.pilotGroups))S.pilotGroups=pilotFromStudy();};
+let S,RT,RPR,TIER;
+/* Only rates the user actually edits are saved (as overrides), so rate-card updates in new versions always come through. */
+function load(){
+ S=structuredClone(EXAMPLE);RT={...RATES_DEFAULT};RPR=structuredClone(RPR_DEFAULT);TIER=structuredClone(TIER_DEFAULT);
+ try{
+  let s=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(!s){const old=JSON.parse(localStorage.getItem("cm_calc_v3")||"null");if(old&&old.S)s={S:old.S};}  // keep old inputs, drop old saved rates
+  if(s&&s.S){S=Object.assign(structuredClone(EXAMPLE),s.S);
+   if(s.RTo)for(const k in s.RTo)if(k in RATES_DEFAULT)RT[k]=s.RTo[k];
+   if(s.RPRo)for(const k in s.RPRo)if(k in RPR_DEFAULT)RPR[k]=s.RPRo[k];
+   if(s.TIERo)for(const k in s.TIERo)if(k in TIER_DEFAULT)TIER[k]=s.TIERo[k];
+   if(!TIERS.includes(S.rpCrit))S.rpCrit=EXAMPLE.rpCrit;if(!TIERS.includes(S.rpUE))S.rpUE=EXAMPLE.rpUE;}
+ }catch(e){}
+}
+function save(){try{
+ const RTo={},RPRo={};
+ for(const k in RATES_DEFAULT)if(RT[k]!==RATES_DEFAULT[k])RTo[k]=RT[k];
+ for(const k in RPR_DEFAULT)if(JSON.stringify(RPR[k])!==JSON.stringify(RPR_DEFAULT[k]))RPRo[k]=RPR[k];
+ const TIERo={};for(const k in TIER_DEFAULT)if(JSON.stringify(TIER[k])!==JSON.stringify(TIER_DEFAULT[k]))TIERo[k]=TIER[k];
+ localStorage.setItem(KEY,JSON.stringify({S,RTo,RPRo,TIERo}));
+}catch(e){}}
+const $=v=>"$"+Math.round(v).toLocaleString("en-US");
+const num=v=>{const x=parseFloat(v);return isNaN(x)?0:x};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const r1=x=>Math.round(x*10)/10;
+const up250=x=>Math.ceil(x/RT.MarkupRound-1e-9)*RT.MarkupRound;
+const mu=x=>Math.round(x*(1+RT.Markup)/RT.MarkupRound)*RT.MarkupRound;
+
+function compute(){
+ const R=RT,dayRate=R.Rate*R.DayHrs,bh=num(S.breakMin)/60,isVS=S.studyType==="Validation / Summative";
+ const gs=S.groups.map((g,i)=>({...g,i,net:num(g.n),pn:num(g.n)>0?(num(g.pnOvr)>0?Math.round(num(g.pnOvr)):Math.ceil(num(g.n)*(1+R.OverRecruit)-1e-9)):0})).filter(g=>g.pn>0).map(g=>{const auto=Math.max(1,Math.floor((R.SessWindow+bh)/(num(g.sh)+bh)+1e-6));const used=num(g.ppd)>0?num(g.ppd):auto;return {...g,auto,used,days:Math.ceil(g.pn/used)}});
+ const netPax=gs.reduce((a,g)=>a+g.net,0);
+ const UG=gs.length,D=UG?Math.max(1,gs.filter(g=>g.distinct==="Yes").length):0;
+ const pax=gs.reduce((a,g)=>a+g.pn,0);
+ const maxSess=UG?Math.max(...gs.map(g=>num(g.sh))):0,teams=Math.max(1,num(S.teams));
+ const fmtUsed=UG<2?"Individual":S.format, pps=fmtUsed==="Dyad"?2:fmtUsed==="Triad"?3:1;
+ const sessions=pps===1?pax:Math.ceil(pax/pps);
+ const comboPPD=num(S.comboPPD)>0?num(S.comboPPD):Math.max(1,Math.floor((R.SessWindow+bh)/(Math.max(maxSess,0.25)+bh)+1e-6));
+ const sessDays=pps===1?gs.reduce((a,g)=>a+g.days,0):Math.ceil(sessions/comboPPD);
+ const video=pps===1?gs.reduce((a,g)=>a+g.pn*num(g.sh),0):sessions*maxSess;
+ const calDays=Math.ceil(sessDays/teams);
+ const prepSess=maxSess; // pilot uses the longest session
+ const dg=gs.filter(g=>g.distinct==="Yes");
+ const distHrs=!UG?0:dg.length?dg.reduce((a,g)=>a+num(g.sh),0):maxSess;
+ const modSum=!UG?0:dg.length?dg.reduce((a,g)=>a+R.ModBase+R.ModPerHr*Math.max(0,num(g.sh)-1),0):R.ModBase+R.ModPerHr*Math.max(0,maxSess-1);
+ const avgOver=pps===1?(pax?gs.reduce((a,g)=>a+g.pn*Math.max(0,num(g.sh)-1),0)/pax:0):Math.max(0,maxSess-1);
+ const L={},C={};
+ C.onbDays=S.onbLevel==="Complex"?R.OnbCx:R.OnbStd;C.onbStaff=teams*R.OnbPeople;
+ L.onb=Math.ceil(C.onbStaff*C.onbDays*dayRate/R.OnbRound)*R.OnbRound;
+ L.hf=S.hf==="Yes"?mu(R.HFDays*dayRate):0;
+ const solid=S.scrDraft==="Solid client draft";
+ C.scrPer=solid?R.ScrSolidC*R.Rate+R.ScrSolidR*R.RecRate:R.ScrPoorC*R.Rate+R.ScrPoorR*R.RecRate;
+ C.scr=S.scr==="Yes"?UG*C.scrPer*num(S.scrCx):0;
+ C.agrHrs=S.agr==="Yes"&&UG?R.AgrBase+R.AgrAdd*(UG-1):0;C.agr=C.agrHrs*R.Rate;L.scr=mu(C.scr+C.agr);
+ const verb=solid?"Finalize":"Create";
+ C.scrLabel=S.scr==="Yes"&&S.agr==="Yes"?`${verb} participant screeners and participant agreements`:S.scr==="Yes"?`${verb} participant screeners`:S.agr==="Yes"?"Participant agreements":"Screeners and agreements (not included)";
+ L.irb=S.irb==="Expedited"?R.IRBExp:S.irb==="Full Convened"?R.IRBFull:0;
+ const rev=st=>st==="Review client draft"?R.ReviewPct:1;
+ C.proto=(S.protoSt==="Create"?(isVS?R.ProtoVSBase+R.ProtoVSAdd*(D-1):R.ProtoFormBase+R.ProtoFormAdd*(D-1)):S.protoSt==="Review client draft"?(isVS?R.ProtoRevVSBase+R.ProtoRevVSAdd*(D-1):R.ProtoRevFormBase+R.ProtoRevFormAdd*(D-1)):0)*num(S.protoCx);
+ C.ds=(S.dsSt==="Create"?R.DSCreate:S.dsSt==="Review client draft"?R.DSReview:0)*distHrs;
+ C.mod=S.modSt==="Not needed"?0:modSum*rev(S.modSt);
+ C.log=S.logSt==="Not needed"?0:mu(D*R.LogHrs*R.Rate*rev(S.logSt));
+ C.demo=S.demoSt==="Not needed"?0:mu(UG*R.DemoHrs*R.Rate*rev(S.demoSt));
+ C.clientHrs=S.clientSetup==="Yes"?num(S.clientSetupHrs):0;C.setup=mu((Math.max(0,num(S.setup)+num(S.takedown)-C.clientHrs)+num(S.camera)+num(S.dry)*num(S.dryStaff))*R.Rate);
+ C.prepSub=C.proto+C.ds+C.mod+C.log+C.demo+C.setup+num(S.ship);
+ L.prep=Math.round(C.prepSub*R.PrepAdj*(1+num(S.buffer)/100)/R.MarkupRound)*R.MarkupRound;
+ const staff=Math.max(0,num(S.mods)+Math.max(0,num(S.obs)-(S.clientObs==="Yes"?num(S.clientObsN):0)));
+ ensurePilot();
+ const pOn=S.pilot==="Yes";
+ C.pgs=S.pilotGroups.map((g,i)=>{const pn=num(g.n)>0?(num(g.pnOvr)>0?Math.round(num(g.pnOvr)):Math.ceil(num(g.n)*(1+R.OverRecruit)-1e-9)):0;const auto=Math.max(1,Math.floor((R.SessWindow+bh)/(Math.max(num(g.sh),0.25)+bh)+1e-6));const used=num(g.ppd)>0?num(g.ppd):auto;return {...g,i,pn,auto,used,days:pn?Math.ceil(pn/used):0}});
+ const pact=pOn?C.pgs.filter(g=>g.pn>0):[];
+ C.pilotPN=pact.reduce((a,g)=>a+g.pn,0);C.pilotDays=pact.reduce((a,g)=>a+g.days,0);
+ C.pilotRec=pact.reduce((a,g)=>a+g.pn*num(g.rr),0);C.pilotInc=pact.reduce((a,g)=>a+g.pn*num(g.it),0);C.pilotTrav=pact.reduce((a,g)=>a+g.pn*num(g.tr),0);
+ L.pilot=pOn?mu(C.pilotDays*staff*dayRate*R.ConductUplift+C.pilotDays*num(S.facHrs)*R.FacRate+num(S.pilotUpdHrs)*R.Rate):0;
+ L.conduct=up250(sessDays*staff*dayRate*R.ConductUplift);
+ L.cog=S.clientObs==="Yes"?mu(R.CogHrs*R.Rate):0;
+ L.facil=up250(sessDays*num(S.facHrs)*R.FacRate);
+ L.analysis=R.DBFee+mu(R.AnalysisRatio*video*R.Rate);
+ // Report
+ // Report: priced by priced participants (groups don't matter), session length, critical tier, RCA tier, template
+ const extraHrs=gs.reduce((a,g)=>a+g.pn*Math.max(0,num(g.sh)-1),0);
+ C.rpRows=[["Fixed report cost",R.RepFixed],[`Participants (${pax} \u00d7 $${R.RepPax})`,pax*R.RepPax],[`Session length (${r1(extraHrs)} participant-hrs over 1 hr \u00d7 $${R.RepLen})`,extraHrs*R.RepLen],
+  [`Critical tasks (${S.rpCrit})`,S.rpCrit==="Many"?R.RepCritM:S.rpCrit==="Few"?0:R.RepCritS],[`Use error RCA (${S.rpUE}, per participant)`,pax*(S.rpUE==="Many"?R.RepUEM:S.rpUE==="Few"?0:R.RepUES)],["First-time client template",S.rpTmpl==="Yes"?R.RepTmpl:0]];
+ C.rpSub=C.rpRows.reduce((a,x)=>a+x[1],0);
+ C.repNew=Math.round(C.rpSub/R.MarkupRound)*R.MarkupRound;
+ L.report=C.repNew;
+ L.qs=isVS?mu(R.QSDays*dayRate):0;L.close=mu((isVS?2:1)*dayRate);
+ const cons=L.onb+L.hf+L.scr+L.irb+L.prep+L.pilot+L.conduct+L.cog+L.facil+L.analysis+L.report+L.qs+L.close;
+ const atCM=(S.studySite||"Acme HF facility")==="Acme HF facility";L.facility=atCM?(sessDays+C.pilotDays)*R.FacilityDay:0;L.train=atCM&&S.train==="Yes"?(sessDays+C.pilotDays)*R.TrainRoomDay:0;
+ L.init=S.initFee===""||isNaN(parseFloat(S.initFee))?2400:num(S.initFee);const admT=i=>i<=0?0:(i<=R.AdminCut1?R.AdminFee:(i<=R.AdminCut2?R.AdminFee2:R.AdminFee3));C.adminAuto=gs.reduce((a,g)=>a+g.pn*admT(num(g.it)),0)+pact.reduce((a,g)=>a+g.pn*admT(num(g.it)),0);L.admin=(S.adminOvr===undefined||S.adminOvr===""||isNaN(parseFloat(S.adminOvr)))?C.adminAuto:num(S.adminOvr);L.sun=(gs.reduce((a,g)=>a+(g.sun==="Yes"?g.pn:0),0)+pact.reduce((a,g)=>a+(g.sun==="Yes"?g.pn:0),0))*R.SunshineFee;
+ const recG=gs.map(g=>({d:`Recruitment of up to ${g.pn} ${g.name}`,v:g.pn*num(g.rr)})),incG=gs.map(g=>({d:`Incentives paid to up to ${g.pn} ${g.name}`,v:g.pn*num(g.it)}));
+ if(C.pilotPN>0){recG.push({d:`Pilot: recruitment of up to ${C.pilotPN} participants`,v:C.pilotRec});incG.push({d:`Pilot: incentives paid to up to ${C.pilotPN} participants`,v:C.pilotInc})}
+ L.travReimb=gs.reduce((a,g)=>a+g.pn*num(g.tr),0)+C.pilotTrav;L.misc=num(S.misc);L.devShip=num(S.devShip);
+ const tc=num(S.travC);C.tripDays=tc>0?calDays+num(S.travSetup)+num(S.travDays)+num(S.travExtra):0;
+ L.consTravel=tc>0?tc*(C.tripDays*R.Subsist+Math.max(0,C.tripDays-1)*R.Hotel+R.Flight+num(S.travTime)*dayRate)+num(S.travTrans):0;
+ const fac=L.facility+L.train,rec=L.init+recG.reduce((a,x)=>a+x.v,0)+L.sun,pass=incG.reduce((a,x)=>a+x.v,0)+L.admin+L.travReimb+L.misc+L.devShip+L.consTravel;
+ C.pmPct=(S.pmPct===""||isNaN(parseFloat(S.pmPct))?15:num(S.pmPct))/100;
+ C.pmA=Math.max(R.PMMin,Math.round(cons*C.pmPct/400)*400);
+ C.pmB=Math.max(R.PMMin,Math.round(num(S.pmHrsWk)*num(S.pmWeeks)*R.PMRate/400)*400);
+ L.pm=S.pm==="Yes"?(S.pmMethod==="Time-based"?C.pmB:C.pmA):0;
+ return {L,C,gs,UG,D,pax,netPax,distHrs,sessions,sessDays,video,maxSess,prepSess,teams,calDays,staff,fmtUsed,pps,comboPPD,cons,fac,rec,pass,recG,incG,isVS,grand:cons+fac+rec+pass+L.pm};
+}
+
+/* ---------- UI builders ---------- */
+const sel=(k,opts)=>`<select id="i_${k}" data-k="${k}">${opts.map(o=>`<option${S[k]===o?" selected":""}>${o}</option>`).join("")}</select>`;
+const inpt=(k,step="any",ph="")=>`<input id="i_${k}" data-k="${k}" type="number" step="${step}"${ph?` placeholder="${ph}"`:""} value="${esc(S[k])}">`;
+const row=(label,ctrl,hint="")=>`<div class="row"><label>${label}</label>${ctrl}${hint?`<div class="hint">${hint}</div>`:""}</div>`;
+const calc=(label,id)=>`<div class="calc"><span>${label}</span><b id="${id}"></b></div>`;
+const result=(labelId,id)=>`<div class="result"><span id="${labelId}"></span><b id="${id}"></b></div>`;
+const ST=["Create","Review client draft","Not needed"],YN=["Yes","No"];
+const SECTIONS=[
+ {n:"A",t:"Study setup",chip:null,html:()=>`
+  ${row("Study type",sel("studyType",["Early Formative","Later Formative","Validation / Summative"]),"Early formative (ef), later formative (lf), or validation/summative (vs).")}
+  ${row("Acme HF study teams",inpt("teams",1),"Teams running in parallel. Multiplies onboarding and splits calendar days.")}
+  ${row("Break between sessions (min)",inpt("breakMin",1),"Short breaks (15-30 min) assumed. For 1-hr breaks, set a sessions/day override.")}
+  ${row("Session format",sel("format",["Individual","Dyad","Triad"]),"Dyad = 2 user groups per session (e.g., nurse + surgeon); triad = 3. Needs 2+ user groups.")}
+  ${row("Combined sessions/day override",inpt("comboPPD",1,"auto"),"Dyad/triad only. Blank = auto from the longest session.")}
+  <div class="grp"><h3>Participant groups</h3><div class="tbl"><table><thead><tr><th>User group</th><th>NET n (target, no buffer)</th><th>PRICED n (auto +20%; type to override)</th><th>Session hrs (study session only; excludes training/decay)</th><th>Distinct workflow?</th><th>Recruit $/pax</th><th>Incentive $/pax</th><th>Travel $/pax</th><th>Sunshine Act?</th><th>Sessions/day (recommended; edit to override)</th><th>Session days</th><th></th></tr></thead><tbody id="gbody"></tbody></table></div>
+  <div><button type="button" id="addg">Add user group</button></div>
+  <p class="logic" style="color:var(--pink-ink);font-weight:600">Enter the NET target in the n column (e.g., 15). The calculator always prices the worst case: net \u00d7 1.2, rounded up (15 \u2192 18). Priced n drives every cost. Don't add the buffer yourself. To price a different number (for example 8 instead of 10), type it in the PRICED n box; the \u21ba button goes back to automatic.</p>
+  <p class="logic">Sessions/day shows the recommended value, round down[(6.5 + break hrs) \u00f7 (session hrs + break hrs)] (1 hr \u2192 5, 2 hr \u2192 3, 3 hr \u2192 2). Type over it to override; overrides show in bold with a \u21ba to go back. Session hrs is the study session only; training/decay time is not included. Sunshine Act: mark Yes only for groups whose payments must be reported (e.g., US physicians and certain other licensed clinicians); confirm with the client/compliance. If a group has training/decay, lower its sessions/day to fit the full on-site time. Travel reimbursement is usually $40 or $80 by participant type. Dyad/triad: sessions = participants \u00f7 2 or 3, and each session's data hours are split across the groups in it.</p></div>
+  ${calc("User groups / distinct groups","o_groups")}${calc("Participants: net \u2192 priced","o_pax")}${calc("Format used / total sessions","o_fmt")}${calc("Session days (staff) / calendar days","o_days")}${calc("Video hours / longest session","o_video")}`},
+ {n:1,t:"Project onboarding",chip:"onb",html:()=>`
+  ${row("Device complexity",sel("onbLevel",["Standard","Complex"]),"Standard = 0.5 day per person. Complex = 1 day per person.")}
+  ${calc("Staff \u00d7 days per person","o_onb")}${result("r_onb_l","r_onb")}
+  <p class="logic">Teams \u00d7 3 staff \u00d7 days per person \u00d7 day rate, rounded up to the nearest $800.</p>`},
+ {n:2,t:"High-fidelity study model",chip:"hf",html:()=>`${row("Include?",sel("hf",YN),"Available for every study type.")}${result("r_hf_l","r_hf")}<p class="logic">3 days \u00d7 day rate.</p>`},
+ {n:3,t:"Screeners and participant agreements",chip:"scr",html:()=>`
+  <div class="grp"><h3>Screeners</h3>${row("Screeners needed?",sel("scr",YN))}${row("Client screener draft",sel("scrDraft",["Solid client draft","Poor or no client draft"]),"Solid: 1 hr consultant + 1 hr recruitment per group. Poor/none: 2 + 2 hrs.")}${row("Screener complexity \u00d7",inpt("scrCx",0.25),"Scale: 1.0 = standard \u00b7 1.25 = moderately complex \u00b7 1.5 = very complex.")}${calc("Cost per group / screener cost","o_scr")}</div>
+  <div class="grp"><h3>Participant agreements</h3>${row("Agreements needed?",sel("agr",YN),"2 hrs for the first group + 1 hr per extra group.")}${calc("Hours / cost","o_agr")}</div>
+  ${result("r_scr_l","r_scr")}`},
+ {n:4,t:"IRB",chip:"irb",html:()=>`${row("IRB level",sel("irb",["None","Expedited","Full Convened"]),"Later: link to the assumptions selection.")}${result("r_irb_l","r_irb")}`},
+ {n:5,t:"Study preparation",chip:"prep",html:()=>`
+  ${calc("Session hours across distinct groups (sum)","o_disthrs")}<p class="logic">Data sheets and the moderator script use each distinct group's own session length from the table, then add them up.</p>
+  <div class="grp"><h3>Protocol</h3>${row("Protocol",sel("protoSt",ST))}${row("Complexity \u00d7",inpt("protoCx",0.25),"Scale: 1.0 = standard \u00b7 1.25 = moderately complex \u00b7 1.5 = very complex.")}${calc("Protocol","o_proto")}</div>
+  <div class="grp"><h3>Data sheets</h3>${row("Data sheets",sel("dsSt",ST),"$1,200 create / $600 review \u00d7 the sum of session hours across distinct groups.")}${calc("Data sheets","o_ds")}</div>
+  <div class="grp"><h3>Moderator script</h3>${row("Moderator script",sel("modSt",ST),"Per distinct group: $1,600 + $400 per hour over 1 hr, using that group's own session length.")}${calc("Moderator script","o_mod")}</div>
+  <div class="grp"><h3>Study article logs</h3>${row("Article logs",sel("logSt",ST))}${calc("Article logs","o_log")}</div>
+  <div class="grp"><h3>Demographics questionnaire</h3>${row("Demographics",sel("demoSt",ST),"2 hrs per user group.")}${calc("Demographics","o_demo")}</div>
+  <div class="grp"><h3>Study room setup (hours)</h3>${row("Set up study room",inpt("setup",0.5))}${row("Take down study room",inpt("takedown",0.5))}${row("Will the client support setup and take-down?",sel("clientSetup",YN))}${row("Client-supported setup/take-down hours (Comm Ops estimate)",inpt("clientSetupHrs",0.5),"Subtracted from Acme HF's setup + take-down hours (never below 0). Only used when the client supports setup.")}${row("Set up cameras",inpt("camera",0.5))}${row("Dry run hours",inpt("dry",0.5))}${row("Dry run staff",inpt("dryStaff",1))}${calc("Room setup","o_setup")}</div>
+  <div class="grp"><h3>Shipping and buffer</h3>${row("Shipping and receiving labor ($)",inpt("ship",50))}${row("Buffer (%)",inpt("buffer",1),"Use when less confident, e.g., a new client or unclear scope.")}${calc("Subtotal before adjustment and buffer","o_prepsub")}${calc("Prep adjustment","o_prepadj")}</div>
+  ${result("r_prep_l","r_prep")}<p class="logic">Review of moderator script, logs, or demographics = creation \u00d7 50% (placeholder until review rates are set).</p>`},
+ {n:6,t:"Pilot study",chip:"pilot",html:()=>`${row("Pilot study?",sel("pilot",YN))}
+  <div class="grp"><h3>Pilot groups</h3><div class="tbl"><table><thead><tr><th>Pilot user group</th><th>NET n (blank = not piloted)</th><th>PRICED n (auto +20%; type to override)</th><th>Session hrs (study session only; excludes training/decay)</th><th>Recruit $/pax</th><th>Incentive $/pax</th><th>Travel $/pax</th><th>Sunshine Act?</th><th>Sessions/day (recommended; edit to override)</th><th>Pilot days</th><th></th></tr></thead><tbody id="pbody"></tbody></table></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="pcopy">Copy groups from study</button><button type="button" id="padd">Add pilot group</button></div>
+  <p class="logic">Copied from the study's participant groups (name, session length, rates). Enter NET n only for the groups you want to pilot; remove or edit any row. Changes here never affect the main study. Priced n = net \u00d7 1.2, rounded up (2 \u2192 3).</p></div>
+  ${calc("Pilot priced participants / pilot days","o_pilot")}${row("Hours to update materials between pilot sessions/days",inpt("pilotUpdHrs",0.5),"Total hours, e.g., revising data sheets or the moderator script between pilot day 1 and day 2. Billed at $176/hr.")}${result("r_pilot_l","r_pilot")}<p class="logic">Pilot days \u00d7 (Acme HF staff \u00d7 day rate \u00d7 1.2 + facilitator hours per day \u00d7 $120) + update hours \u00d7 $176, +10% markup. The facilitator hours per day are taken from section 8 ("Facilitator hours per session day"), so changing that input changes both the main study and the pilot. Pilot facility days, recruitment, incentives, travel, and admin are added to those lines in the summary.</p>`},
+ {n:7,t:"Conduct usability study",chip:"conduct",html:()=>`${row("Moderators per session",inpt("mods",1))}${row("Observers per session",inpt("obs",1),"1 moderator + 1 observer = the standard base price.")}${row("Client provides an observer?",sel("clientObs",YN),"Yes = each client observer replaces one Acme HF observer, and a cognitive bias training line is added.")}${row("Number of client observers (if Yes)",inpt("clientObsN",1),"Usually 1. Can't replace more Acme HF observers than are scheduled.")}${calc("Session days \u00d7 Acme HF staff","o_conduct")}${result("r_conduct_l","r_conduct")}${result("r_cog_l","r_cog")}<p class="logic">Session days \u00d7 staff \u00d7 day rate \u00d7 1.2 uplift, rounded up to the next $200 (no 10% markup). Dyad/triad session days are already reduced. Bias training = 2 hrs \u00d7 $176 (placeholder).</p>`},
+ {n:8,t:"Acme HF study facilitator",chip:"facil",html:()=>`${row("Facilitator hours per session day",inpt("facHrs",0.5),"8 = operating cameras full time. 4-6 if they can work on other things while keeping the stream up. 0 = Client provides the facilitator (no facilitator cost).")}${result("r_facil_l","r_facil")}<p class="logic">Session days \u00d7 hours per day \u00d7 $120/hr, rounded up to the next $200 (no 10% markup).</p>`},
+ {n:9,t:"Data entry, analysis, video review",chip:"analysis",html:()=>`${calc("Video hours","o_video2")}${result("r_analysis_l","r_analysis")}<p class="logic">$1,200 database + 2 \u00d7 video hours \u00d7 $176. For dyads/triads, a 4-hr session counts as 4 hrs total (about 2 hrs of data per group).</p>`},
+ {n:10,t:"Report",chip:"report",html:()=>`
+  <p class="logic">Priced by priced participants, not distinct user groups (doubling participants or adding a group is the same reporting work). Final price, no extra markup. HFE/UE report sections are a separate deliverable and are never priced here.</p>
+  ${row("Critical tasks",sel("rpCrit",TIERS),"Few $0 \u00b7 Standard $800 \u00b7 Many $2,400 (once per report).")}
+  ${row("Use errors needing root cause analysis",sel("rpUE",TIERS),"Few $0 \u00b7 Standard $52 \u00b7 Many $160 per priced participant.")}
+  ${row("First time using client's report template?",sel("rpTmpl",YN),"Adds $1,600 (assumed).")}
+  <div class="grp"><h3>Build-up</h3><div class="tbl"><table style="min-width:420px"><thead><tr><th>Component</th><th>Amount</th></tr></thead><tbody id="rpbody"></tbody></table></div></div>
+  ${result("r_report_l","r_report")}<p class="logic">$8,000 + $320 per priced participant + $108 per participant-hour over 1 hr + critical tier + RCA tier, rounded to the nearest $200. Rates are editable in the Rate card.</p>`},
+ {n:11,t:"Quality systems and close-out",chip:"qsclose",html:()=>`${result("r_qs_l","r_qs")}${result("r_close_l","r_close")}<p class="logic">Quality systems: validation only, 2 days. Close-out: 1 staff (ef/lf) or 2 staff (vs) \u00d7 1 day.</p>`},
+ {n:12,t:"Facility and recruitment",chip:"facrec",html:()=>`${row("Study site",sel("studySite",["Acme HF facility","Client site","3rd-party site"]),"Client or 3rd-party site = no Acme HF facility or training room rental.")}${row("Training room?",sel("train",YN))}${row("Recruitment initiation fee ($)",inpt("initFee",100),"Default $2,400. Type the recruiter's actual fee if different.")}<p class="logic">Facility = session days \u00d7 $1,600 (+ $500 training room). Recruitment = initiation fee (input, default $2,400) + n \u00d7 recruit rate (payment admin fees are now a pass-through) (+ $60 Sunshine Act per participant in groups marked Yes in the participant/pilot tables).</p>`},
+ {n:13,t:"Pass-through expenses",chip:"pass",html:()=>`
+  ${row("Participant payment admin fee: manual override, total ($)",inpt("adminOvr",1,"auto"),"Leave blank to use the automatic fee: $20 per person if the incentive is up to $400, $40 if $401\u2013$2,000, $80 if over $2,000. Type a total to override.")}${calc("Automatic payment admin fee","o_admin")}${row("Misc. study expenses ($)",inpt("misc",100))}${row("Shipment of large devices / materials ($)",inpt("devShip",100),"Freight for larger devices or equipment.")}
+  <div class="grp"><h3>Consultant travel</h3>${row("Travelling consultants",inpt("travC",1))}${row("On-site setup days",inpt("travSetup",1))}${row("Travel days (to + from)",inpt("travDays",1))}${row("Extra days on site (weekends, gaps)",inpt("travExtra",1))}${row("Billed travel time per consultant (days)",inpt("travTime",0.5))}${row("Ground transportation, total ($)",inpt("travTrans",50),"Airport transfers, hotel-to-site travel, etc. Total for all travelling consultants. Leave 0 if none.")}${calc("Trip days per consultant","o_trip")}</div>
+  <p class="logic">Per consultant: trip days \u00d7 $100 + (trip days \u2212 1) nights \u00d7 $200 + $480 flight + travel time \u00d7 day rate. Trip days = calendar study days + setup + travel + extra days.</p>`},
+ {n:14,t:"Project management",chip:"pm",html:()=>`
+  ${row("Include PM fee?",sel("pm",YN))}${row("Method",sel("pmMethod",["% of consulting","Time-based"]))}
+  ${row("Option A: PM % of consulting",inpt("pmPct",1),"Standard is 15%. Type any % (e.g., 10 for a simple project, 20 for a complex one).")}${calc("Option A: PM fee (% of consulting)","o_pmA")}
+  ${row("PM hours per week",inpt("pmHrsWk",0.5))}${row("Timeline (weeks)",inpt("pmWeeks",1))}${calc("Option B: time-based","o_pmB")}
+  ${result("r_pm_l","r_pm")}<p class="logic">Both options round to the nearest $400 with a $4,000 minimum. The selected method feeds the total.</p>`},
+ {n:"R",t:"Rate card",chip:null,html:()=>`<p class="logic">Edit any rate to see its effect. Only rates you change are saved (this browser only); everything else follows the current rate card. Reset rates clears your changes.</p><div class="rates">${Object.keys(RATES_DEFAULT).map(k=>row(RATE_LABELS[k],`<input id="rt_${k}" data-rate="${k}" type="number" step="any" value="${RT[k]}">`)).join("")}</div><div><button type="button" id="resetRates">Reset rates</button></div>`},
+];
+function build(){
+ document.getElementById("sections").innerHTML=SECTIONS.map((s,i)=>`<details class="sec" ${i<2||s.n===5||s.n===10?"open":""}><summary><span class="num">${s.n}</span><span class="stitle">${s.t}</span>${s.chip?`<span class="chip" id="chip_${s.chip}"></span>`:""}<span class="caret">\u203a</span></summary><div class="body">${s.html()}</div></details>`).join("");
+ buildGroups();buildPilot();
+ document.getElementById("pcopy").onclick=()=>{S.pilotGroups=pilotFromStudy();buildPilot();update()};
+ document.getElementById("padd").onclick=()=>{ensurePilot();S.pilotGroups.push({name:"New pilot group",n:"",sh:1,rr:0,it:0,tr:80,ppd:""});buildPilot();update()};
+ document.getElementById("addg").onclick=()=>{S.groups.push({name:"New group",n:0,sh:1,distinct:"Yes",rr:0,it:0,tr:80,ppd:""});buildGroups();update()};
+ document.getElementById("resetRates").onclick=()=>{RT={...RATES_DEFAULT};RPR=structuredClone(RPR_DEFAULT);TIER=structuredClone(TIER_DEFAULT);build();update()};
+}
+function buildPilot(){
+ ensurePilot();
+ const f=(i,k,step,ph="")=>`<td><input id="p${i}_${k}" data-pg="${i}" data-f="${k}" type="number" step="${step}"${ph?` placeholder="${ph}"`:""} value="${esc(S.pilotGroups[i][k]??"")}"></td>`;
+ document.getElementById("pbody").innerHTML=S.pilotGroups.map((g,i)=>`<tr>
+  <td><input id="p${i}_name" data-pg="${i}" data-f="name" value="${esc(g.name)}"></td>${f(i,"n",1,"\u2013")}<td><div style="display:flex;gap:4px;align-items:center"><input id="p${i}_pnov" data-pg="${i}" data-f="pnOvr" type="number" step="1" min="1" style="width:72px;font-weight:600" value="${esc(g.pnOvr??"")}"><button type="button" class="x" id="p${i}_pnreset" data-ppnreset="${i}" title="Back to automatic (net \u00d7 1.2)" aria-label="Reset priced pilot participants to automatic" hidden>\u21ba</button></div></td>${f(i,"sh",0.25)}${f(i,"rr",10)}${f(i,"it",10)}${f(i,"tr",50)}<td><select id="p${i}_sun" data-pg="${i}" data-f="sun">${YN.map(o=>`<option${(g.sun||"No")===o?" selected":""}>${o}</option>`).join("")}</select></td>
+  <td><div style="display:flex;gap:4px;align-items:center"><input id="p${i}_ppd" data-pg="${i}" data-f="ppd" type="number" step="1" min="1" value="${esc(g.ppd??"")}"><button type="button" class="x" id="p${i}_ppdreset" data-pppdreset="${i}" title="Back to recommended" aria-label="Reset pilot sessions per day to recommended" hidden>\u21ba</button></div></td>
+  <td class="o" id="p${i}_days"></td><td><button type="button" class="x" data-pdel="${i}" aria-label="Remove pilot group ${esc(g.name)}">\u2715</button></td></tr>`).join("");
+}
+function updatePilotRows(C){
+ C.pgs.forEach(m=>{const i=m.i;syncPn("p",i,S.pilotGroups[i],m.pn);set(`p${i}_days`,m.pn?m.days:"\u2013");
+  const pi=document.getElementById(`p${i}_ppd`),rb=document.getElementById(`p${i}_ppdreset`);
+  if(pi){const g=S.pilotGroups[i],over=num(g.ppd)>0&&num(g.ppd)!==m.auto;
+   if(document.activeElement!==pi)pi.value=num(g.ppd)>0?g.ppd:m.auto;
+   pi.style.fontWeight=over?"700":"400";pi.title=`Recommended: ${m.auto}`;if(rb)rb.hidden=!over;}});
+}
+function buildGroups(){
+ const f=(i,k,step,ph="")=>`<td><input id="g${i}_${k}" data-g="${i}" data-f="${k}" type="number" step="${step}"${ph?` placeholder="${ph}"`:""} value="${esc(S.groups[i][k]??"")}"></td>`;
+ document.getElementById("gbody").innerHTML=S.groups.map((g,i)=>`<tr>
+  <td><input id="g${i}_name" data-g="${i}" data-f="name" value="${esc(g.name)}"></td>${f(i,"n",1)}<td><div style="display:flex;gap:4px;align-items:center"><input id="g${i}_pnov" data-g="${i}" data-f="pnOvr" type="number" step="1" min="1" style="width:72px;font-weight:600" value="${esc(g.pnOvr??"")}"><button type="button" class="x" id="g${i}_pnreset" data-pnreset="${i}" title="Back to automatic (net \u00d7 1.2)" aria-label="Reset priced participants to automatic" hidden>\u21ba</button></div></td>${f(i,"sh",0.25)}
+  <td><select id="g${i}_distinct" data-g="${i}" data-f="distinct">${YN.map(o=>`<option${g.distinct===o?" selected":""}>${o}</option>`).join("")}</select></td>
+  ${f(i,"rr",10)}${f(i,"it",10)}${f(i,"tr",50)}<td><select id="g${i}_sun" data-g="${i}" data-f="sun">${YN.map(o=>`<option${(g.sun||"No")===o?" selected":""}>${o}</option>`).join("")}</select></td><td><div style="display:flex;gap:4px;align-items:center"><input id="g${i}_ppd" data-g="${i}" data-f="ppd" type="number" step="1" min="1" value="${esc(g.ppd??"")}"><button type="button" class="x" id="g${i}_ppdreset" data-ppdreset="${i}" title="Back to recommended" aria-label="Reset sessions per day to recommended" hidden>\u21ba</button></div></td>
+  <td class="o" id="g${i}_days"></td>
+  <td><button type="button" class="x" data-del="${i}" aria-label="Remove ${esc(g.name)}">\u2715</button></td></tr>`).join("");
+}
+const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+/* priced participants: shows the automatic number (net x 1.2, rounded up) until the user types a different one */
+function syncPn(pre,i,g,pn){const inp=document.getElementById(`${pre}${i}_pnov`),rb=document.getElementById(`${pre}${i}_pnreset`);if(!inp)return;
+ const auto=num(g.n)>0?Math.ceil(num(g.n)*(1+RT.OverRecruit)-1e-9):0,over=num(g.pnOvr)>0&&num(g.pnOvr)!==auto;
+ if(document.activeElement!==inp)inp.value=pn>0?pn:"";
+ inp.style.fontWeight=over?"700":"600";inp.title=over?`Manual override. Automatic would be ${auto}.`:"Automatic: net \u00d7 1.2, rounded up. Type a number to override.";if(rb)rb.hidden=!over}
+function update(){
+ const r=compute(),L=r.L,C=r.C;
+ S.groups.forEach((g,i)=>{const m=r.gs.find(x=>x.i===i);syncPn("g",i,g,m?m.pn:0);
+  const pi=document.getElementById(`g${i}_ppd`),rb=document.getElementById(`g${i}_ppdreset`);
+  if(pi){const over=num(g.ppd)>0&&m&&num(g.ppd)!==m.auto;
+   if(document.activeElement!==pi)pi.value=num(g.ppd)>0?g.ppd:(m?m.auto:"");
+   pi.style.fontWeight=over?"700":"400";pi.title=m?`Recommended: ${m.auto}`:"";if(rb)rb.hidden=!over;}set(`g${i}_days`,m&&r.pps===1?m.days:"\u2013")});
+ set("o_groups",`${r.UG} / ${r.D}`);set("o_pax",`${r.netPax} \u2192 ${r.pax}`);set("o_fmt",`${r.fmtUsed} / ${r.sessions}`);set("o_days",`${r.sessDays} / ${r.calDays}`);set("o_video",`${r1(r.video)} / ${r.maxSess} hr`);set("o_video2",`${r1(r.video)} hrs`);
+ set("o_onb",`${C.onbStaff} \u00d7 ${C.onbDays}`);
+ set("o_scr",`${$(C.scrPer)} / ${$(C.scr)}`);set("o_agr",`${C.agrHrs} hrs / ${$(C.agr)}`);
+ set("o_proto",$(C.proto));set("o_disthrs",`${r1(r.distHrs)} hrs`);set("o_ds",$(C.ds));set("o_mod",$(C.mod));set("o_log",$(C.log));set("o_demo",$(C.demo));set("o_setup",$(C.setup));set("o_prepsub",$(C.prepSub));set("o_prepadj",`${Math.round(RT.PrepAdj*100)}% (${Math.round((RT.PrepAdj-1)*100)}%)`);
+ set("o_pilot",`${C.pilotPN} / ${C.pilotDays}`);updatePilotRows(C);set("o_conduct",`${r.sessDays} \u00d7 ${r.staff}`);
+ document.getElementById("rpbody").innerHTML=C.rpRows.map(x=>`<tr><td>${x[0]}</td><td class="o">${$(x[1])}</td></tr>`).join("")+`<tr><td><b>Subtotal</b></td><td class="o"><b>${$(C.rpSub)}</b></td></tr>`;
+ 
+ set("o_trip",C.tripDays);set("o_admin",$(C.adminAuto));set("o_pmA",`${Math.round(C.pmPct*100)}% \u2192 ${$(C.pmA)}`);set("o_pmB",`${S.pmHrsWk} hrs \u00d7 ${S.pmWeeks} wks \u2192 ${$(C.pmB)}`);
+ const labels={onb:"Project onboarding",hf:S.hf==="Yes"?"Develop high-fidelity study model":"High-fidelity model (not included)",scr:C.scrLabel,irb:S.irb==="None"?"IRB (not included)":`${S.irb} IRB`,prep:"Study Preparation",pilot:S.pilot==="Yes"?"Pilot study":"Pilot study (not included)",conduct:"Conduct Usability Study and collect data",
+  cog:S.clientObs==="Yes"?"Cognitive bias training for client observers":"Cognitive bias training (not included)",facil:"Acme HF Study Facilitator",analysis:"Data Entry, Data Analysis, Review of Video",report:"Report",
+  qs:r.isVS?"Quality Systems Compliance and Document Release":"Quality Systems (validation only)",close:"Project close out costs",pm:`Project Management (${S.pmMethod})`};
+ for(const k in labels){set(`r_${k}_l`,labels[k]);set(`r_${k}`,$(L[k]))}
+ const chips={onb:L.onb,hf:L.hf,scr:L.scr,irb:L.irb,prep:L.prep,pilot:L.pilot,conduct:L.conduct+L.cog,facil:L.facil,analysis:L.analysis,report:L.report,qsclose:L.qs+L.close,facrec:r.fac+r.rec,pass:r.pass,pm:L.pm};
+ for(const k in chips)set(`chip_${k}`,$(chips[k]));
+ const cat=t=>`<div class="cat">${t}</div>`,ln=(d,v)=>`<div class="l${v?"":" zero"}"><span>${esc(d)}</span><b>${$(v)}</b></div>`,st=(d,v)=>`<div class="st"><span>${d}</span><b>${$(v)}</b></div>`;
+ document.getElementById("summary").innerHTML=cat("Consulting fees")+["onb","hf","scr","irb","prep","pilot","conduct","cog","facil","analysis","report","qs","close"].map(k=>ln(labels[k],L[k])).join("")+st("Consulting",r.cons)
+  +cat("Facility")+ln((S.studySite||"Acme HF facility")!=="Acme HF facility"?`Study Facility Rental (not included: ${S.studySite.toLowerCase()})`:C.pilotDays?`Study Facility Rental (incl. ${C.pilotDays} pilot day${C.pilotDays>1?"s":""})`:"Study Facility Rental",L.facility)+ln("Training Room Rental",L.train)+st("Facility",r.fac)
+  +cat("Recruitment")+ln("Recruitment Initiation Fee",L.init)+r.recG.map(x=>ln(x.d,x.v)).join("")+ln(L.sun?"Sunshine Act Reporting":"Sunshine Act Reporting (not included)",L.sun)+st("Recruitment",r.rec)
+  +cat("Pass-through")+r.incG.map(x=>ln(x.d,x.v)).join("")+ln("Participant payment administration fee",L.admin)+ln("Reimbursement of travel expenses",L.travReimb)+ln("Misc. study expenses paid",L.misc)+ln("Shipment of devices and materials",L.devShip)+ln("Consultant travel",L.consTravel)+st("Pass-through",r.pass)
+  +st(labels.pm,L.pm);
+ set("grand",$(r.grand));
+ document.getElementById("dyadBanner").hidden=r.fmtUsed==="Individual";
+ const open=["Rates and hours in this demo are invented placeholders","Check the assumptions before using any number"];
+ document.getElementById("open").innerHTML=open.map(o=>`<li>${o}</li>`).join("");
+ save();
+}
+document.addEventListener("input",e=>{const t=e.target;
+ if(t.dataset.k){S[t.dataset.k]=t.type==="number"?(t.value===""?"":parseFloat(t.value)):t.value;update()}
+ else if(t.dataset.g){const g=S.groups[+t.dataset.g];g[t.dataset.f]=t.type==="number"?(t.value===""?"":parseFloat(t.value)):t.value;
+  if(t.dataset.f==="ppd"){const m=compute().gs.find(x=>x.i===+t.dataset.g);if(m&&num(g.ppd)===m.auto)g.ppd="";}
+  if(t.dataset.f==="pnOvr"&&num(g.pnOvr)===Math.ceil(num(g.n)*(1+RT.OverRecruit)-1e-9))g.pnOvr="";update()}
+ else if(t.dataset.pg){const g=S.pilotGroups[+t.dataset.pg];g[t.dataset.f]=t.type==="number"?(t.value===""?"":parseFloat(t.value)):t.value;
+  if(t.dataset.f==="ppd"){const m=compute().C.pgs[+t.dataset.pg];if(m&&num(g.ppd)===m.auto)g.ppd="";}
+  if(t.dataset.f==="pnOvr"&&num(g.pnOvr)===Math.ceil(num(g.n)*(1+RT.OverRecruit)-1e-9))g.pnOvr="";update()}
+ else if(t.dataset.rate){RT[t.dataset.rate]=num(t.value);update()}
+ else if(t.dataset.tier){TIER[t.dataset.tier][+t.dataset.j]=num(t.value);update()}
+ else if(t.dataset.rpr){RPR[t.dataset.rpr][+t.dataset.j]=num(t.value);update()}});
+document.addEventListener("click",e=>{const pd=e.target.closest("[data-pdel]");if(pd){S.pilotGroups.splice(+pd.dataset.pdel,1);buildPilot();update();return}
+ const pnr=e.target.closest("[data-pnreset]");if(pnr){S.groups[+pnr.dataset.pnreset].pnOvr="";const x=document.getElementById(`g${pnr.dataset.pnreset}_pnov`);if(x)x.blur();update();return}
+ const ppn=e.target.closest("[data-ppnreset]");if(ppn){S.pilotGroups[+ppn.dataset.ppnreset].pnOvr="";const x=document.getElementById(`p${ppn.dataset.ppnreset}_pnov`);if(x)x.blur();update();return}
+ const pr=e.target.closest("[data-pppdreset]");if(pr){S.pilotGroups[+pr.dataset.pppdreset].ppd="";update();return}
+ const rs=e.target.closest("[data-ppdreset]");if(rs){S.groups[+rs.dataset.ppdreset].ppd="";const pi=document.getElementById(`g${rs.dataset.ppdreset}_ppd`);if(pi)pi.blur();update();return}
+ const d=e.target.closest("[data-del]");if(d){S.groups.splice(+d.dataset.del,1);buildGroups();update()}});
+document.getElementById("reset").onclick=()=>{S=structuredClone(EXAMPLE);RT={...RATES_DEFAULT};RPR=structuredClone(RPR_DEFAULT);TIER=structuredClone(TIER_DEFAULT);build();update()};
+load();build();update();
+</script>
+
+
+<!-- Export to Claude (added by ClariPro site): builds the same kind of text the Comm Ops Intake copies ("Copy final answers for Claude"), from this calculator's inputs. -->
+<div id="cmExpOv" hidden style="position:fixed;inset:0;background:rgba(12, 39, 58,.55);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--surface,#fff);color:var(--fg,#15242E);border-radius:12px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:22px 24px;box-shadow:0 12px 40px rgba(0,0,0,.3)">
+    <h2 style="margin:0 0 6px;font-size:1.15rem">Copy for Claude (Word SOW)</h2>
+    <p style="margin:0 0 14px;font-size:.88rem;color:var(--muted,#5A6974)">Builds the same text as the Comm Ops Intake's "Copy final answers for Claude", using the inputs in this calculator. Paste it into a Cowork session with the drafting skill to get the Word SOW. Anything not asked for here is left blank, and Claude will ask for it.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem">Client name<input id="cmxClient" type="text" placeholder="e.g. Client name" style="padding:7px 9px;border:1px solid var(--line,#D8E5E6);border-radius:6px;background:var(--surface,#fff);color:inherit"></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem">Project / device code name<input id="cmxProject" type="text" placeholder="e.g. Project name" style="padding:7px 9px;border:1px solid var(--line,#D8E5E6);border-radius:6px;background:var(--surface,#fff);color:inherit"></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem">Pricing model (all deliverables)<select id="cmxModel" style="padding:7px 9px;border:1px solid var(--line,#D8E5E6);border-radius:6px;background:var(--surface,#fff);color:inherit"><option>Fixed fee</option><option>Time and materials</option></select></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem">Where the study takes place<select id="cmxLoc" style="padding:7px 9px;border:1px solid var(--line,#D8E5E6);border-radius:6px;background:var(--surface,#fff);color:inherit"><option>US</option><option>UK</option><option>Other</option></select></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem;grid-column:1/-1">Other deliverables to include (optional, comma separated, e.g. Use-Related Risk Analysis (review), IFU review)<input id="cmxOther" type="text" style="padding:7px 9px;border:1px solid var(--line,#D8E5E6);border-radius:6px;background:var(--surface,#fff);color:inherit"></label>
+    </div>
+    <p id="cmxNote" style="font-size:.8rem;color:var(--muted,#5A6974);margin:10px 0 6px"></p>
+    <textarea id="cmxOut" readonly rows="8" style="width:100%;box-sizing:border-box;font:12px/1.4 monospace;padding:8px;border:1px solid var(--line,#D8E5E6);border-radius:6px;background:var(--sunk,#ECF4F5);color:inherit" hidden></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+      <button id="cmxClose" type="button">Close</button>
+      <button id="cmxGo" type="button" style="background:#0C273A;color:#fff;border:0;border-radius:6px;padding:8px 14px;cursor:pointer">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+ const $q=id=>document.getElementById(id);
+ const KEYS=["studyType","teams","breakMin","format","onbLevel","hf","scr","scrDraft","scrCx","agr","irb","protoSt","protoCx","dsSt","modSt","logSt","demoSt","setup","takedown","clientSetup","clientSetupHrs","camera","dry","dryStaff","ship","buffer","pilot","pilotUpdHrs","mods","obs","clientObs","clientObsN","facHrs","rpCrit","rpUE","rpTmpl","train","studySite","initFee","adminOvr","misc","devShip","travC","travSetup","travDays","travExtra","travTime","travTrans","pm","pmMethod","pmPct","pmHrsWk","pmWeeks"];
+ const b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+ const usd=n=>"$"+Math.round(n).toLocaleString("en-US");
+ function build(){
+  const client=$q("cmxClient").value.trim(), project=$q("cmxProject").value.trim(), model=$q("cmxModel").value, loc=$q("cmxLoc").value;
+  const other=$q("cmxOther").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const answers={proposalType:"Word SOW",pricingModel:model,tmDelivs:[],dataHandling:"",clientName:client,projectName:project||"[Project Name]",currency:"USD",location:loc,hasStudy:"Yes",studySite:S.studySite||"Acme HF facility",otherDelivs:other,pmStructure:"Folded into each deliverable",ratesNote:"Study Pricing Calculator rates",incentive:"No"};
+  KEYS.forEach(k=>{if(S[k]!==undefined&&S[k]!==null)answers[k]=String(S[k]);});
+  answers.studySite=S.studySite||"Acme HF facility";
+  const G=(S.groups||[]).filter(g=>String(g.name||"").trim()&&parseFloat(g.n)>0);
+  const PG=Array.isArray(S.pilotGroups)?S.pilotGroups:[];
+  const groups=G.map((g,i)=>({name:g.name,n:String(g.n),sh:String(g.sh),same:(g.distinct==="No")?"Yes":"No",rr:String(g.rr||0),it:String(g.it||0),tr:String(g.tr||0),sun:g.sun||"No",ppd:(g.ppd===""||g.ppd==null)?"Recommended":String(g.ppd),pnOvr:String(g.pnOvr||""),pnOvrP:String((PG[i]&&PG[i].pnOvr)||""),pn:String((PG[i]&&PG[i].n)||""),psh:String((PG[i]&&PG[i].sh)||g.sh)}));
+  const models={"Onboarding":model,"Usability study":model,"Project management":model};other.forEach(o=>models[o]=model);
+  const spec={v:1,answers,groups,models,sizes:{}};
+  let r=null;try{r=compute();}catch(e){}
+  const edited=Object.keys(RATES_DEFAULT).filter(k=>RT[k]!==RATES_DEFAULT[k]);
+  const L=[];
+  L.push("ACME HF PROPOSAL INTAKE - FINAL (STUDY PRICING CALCULATOR EXPORT) - "+new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}));
+  L.push("","[SME answers not imported. Values below come from the Study Pricing Calculator inputs; anything not listed is blank. Ask for missing details before drafting.]","");
+  L.push("== PROPOSAL BASICS ==","Proposal type: Word SOW","Default pricing model (all deliverables): "+model,"Client name: "+(client||"[blank]"),"Project / device code name: "+(project||"[Project Name]"),"Currency preference: USD","Where will the study or work take place: "+loc,"");
+  L.push("== SCOPE ==","Includes a usability study: Yes","Study type: "+S.studyType,"Where will sessions be run: "+(S.studySite||"Acme HF facility"),"Other deliverables: "+(other.length?other.join("; "):"None listed"),"");
+  L.push("== STUDY DESIGN AND PARTICIPANTS ==","Study teams in parallel: "+S.teams,"Session format: "+S.format,"Break between sessions (min): "+S.breakMin);
+  G.forEach(g=>L.push("  Group: "+g.name+" | participants "+g.n+" | session hrs "+g.sh+" | recruitment $"+(g.rr||0)+", incentive $"+(g.it||0)+", travel $"+(g.tr||0)));
+  L.push("","== PRICING INPUTS (from calculator) ==");
+  L.push("Onboarding: "+S.onbLevel+" | High-fidelity model: "+S.hf+" | Screeners: "+S.scr+" ("+S.scrDraft+", complexity "+S.scrCx+") | Participant agreements: "+S.agr+" | IRB: "+S.irb);
+  L.push("Protocol: "+S.protoSt+" (complexity "+S.protoCx+") | Data sheets: "+S.dsSt+" | Moderator script: "+S.modSt+" | Article logs: "+S.logSt+" | Demographics: "+S.demoSt);
+  L.push("Setup hrs "+S.setup+", take-down hrs "+S.takedown+", camera hrs "+S.camera+", dry run hrs "+S.dry+" (staff "+S.dryStaff+"), pilot: "+S.pilot+", study prep buffer "+S.buffer+"%");
+  L.push("Moderators "+S.mods+", Acme HF observers "+S.obs+", client observers: "+S.clientObs+", facilitation hrs/day "+S.facHrs+", training room: "+S.train);
+  L.push("Report: critical tasks "+S.rpCrit+", use errors needing root cause "+S.rpUE+", client report template "+S.rpTmpl);
+  L.push("Recruitment initiation fee "+usd(S.initFee||0)+", misc. expenses "+usd(S.misc||0)+", device shipping "+usd(S.devShip||0)+", travelling consultants "+(S.travC||0));
+  L.push("Project management: "+S.pm+(S.pm==="Yes"?" ("+S.pmMethod+(S.pmMethod==="% of consulting"?", "+S.pmPct+"%":", "+S.pmHrsWk+" hrs/wk for "+S.pmWeeks+" weeks")+")":""),"");
+  L.push("== RATES ==",edited.length?("Rate card edited in the calculator (the drafting skill uses the standard rate card; confirm these with Comm Ops): "+edited.map(k=>k+"="+RT[k]).join(", ")):"Standard rate card","");
+  if(r)L.push("== CROSS-CHECK ==","Calculator grand total at export: "+usd(r.grand)+" (the drafting skill recomputes the price from PROPOSAL-DATA; tell the person if its total differs).","");
+  L.push("PROPOSAL-DATA: "+b64(spec));
+  return L.join("\n");
+ }
+ function open(){const ov=$q("cmExpOv");ov.hidden=false;ov.style.display="flex";$q("cmxOut").hidden=true;$q("cmxNote").textContent="";}
+ function close(){const ov=$q("cmExpOv");ov.hidden=true;ov.style.display="none";}
+ $q("cmExport").addEventListener("click",open);
+ $q("cmxClose").addEventListener("click",close);
+ $q("cmExpOv").addEventListener("click",e=>{if(e.target.id==="cmExpOv")close();});
+ $q("cmxGo").addEventListener("click",async()=>{
+  const t=build(), out=$q("cmxOut"); out.value=t; out.hidden=false;
+  try{await navigator.clipboard.writeText(t);$q("cmxNote").textContent="Copied. Paste it into a Cowork session with the drafting skill and ask for a Word SOW.";}
+  catch(e){out.select();$q("cmxNote").textContent="Could not copy automatically. The text is selected below; press Ctrl+C, then paste it into Cowork.";}
+ });
+})();
+</script>
+</body></html>

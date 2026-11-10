@@ -1,0 +1,218 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Timeline Tool Inputs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: checklist &#x2014; header, how-to strip, sections of input rows (status chips + value + note), sticky copy bar */
+:root{
+  --bg:#F6FAFA; --surface:#ffffff; --fg:#16222B; --muted:#5A6872; --line:#DBE3E8;
+  --navy:#0C273A; --purple:#196972; --pink:#F4B782; --chip:#E9F5F6;
+  --firm:#1f6b4a; --firm-bg:#e3f3ea; --assume:#7a5000; --assume-bg:#fff4dc; --na:#5A6872; --na-bg:#EBEEF1;
+  --display:"Sora",ui-sans-serif,system-ui,sans-serif; --body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111C24; --surface:#1A2933; --fg:#EBF1F5; --muted:#A6B6C2; --line:#2D404D; --navy:#C6E1F5; --purple:#A4E7EF; --chip:#253947;
+  --firm:#8fe0b6; --firm-bg:#173a2a; --assume:#f4cf7a; --assume-bg:#3a2d10; --na:#A6B6C2; --na-bg:#24333D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111C24; --surface:#1A2933; --fg:#EBF1F5; --muted:#A6B6C2; --line:#2D404D; --navy:#C6E1F5; --purple:#A4E7EF; --chip:#253947;
+  --firm:#8fe0b6; --firm-bg:#173a2a; --assume:#f4cf7a; --assume-bg:#3a2d10; --na:#A6B6C2; --na-bg:#24333D; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);padding-inline:16px;padding-block:24px 120px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:28px}
+h1,h2,h3{font-family:var(--display);color:var(--navy);text-wrap:balance;margin:0;font-weight:600}
+h1{font-size:clamp(1.6rem,3vw,2.2rem)} h2{font-size:1.2rem}
+header{display:grid;gap:12px;border-bottom:3px solid var(--pink);padding-bottom:18px}
+.logo{background:#fff;border-radius:8px;padding:8px 12px;justify-self:start;line-height:0}
+.logo img{height:36px;width:auto}
+.eyebrow{font:500 .75rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--purple)}
+.lede{color:var(--muted);max-width:70ch;margin:0}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.how div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:.93rem;color:var(--muted)}
+.how b{display:block;font-family:var(--display);font-weight:500;color:var(--purple);margin-bottom:2px}
+section{display:grid;gap:10px}
+.sec-h{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between}
+.sec-h p{margin:0;color:var(--muted);font-size:.92rem;max-width:70ch}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px 18px}
+.row[data-s="firm"]{border-left:4px solid var(--firm);border-radius:0 10px 10px 0}
+.row[data-s="assume"]{border-left:4px solid var(--assume);border-radius:0 10px 10px 0}
+.row[data-s="na"]{border-left:4px solid var(--na);border-radius:0 10px 10px 0;opacity:.75}
+.q{display:grid;gap:4px;min-width:0}
+.q .t{font-weight:600}
+.q .id{font:500 .72rem var(--mono);color:var(--purple);letter-spacing:.04em}
+.q .d{font-size:.9rem;color:var(--muted)}
+.q .dep{font-size:.88rem}
+.q .dep b{font:500 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--purple);margin-right:6px}
+.a{display:grid;gap:8px;align-content:start;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:600 .82rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:4px 12px;cursor:pointer}
+.chips button[aria-pressed="true"][data-v="firm"]{background:var(--firm-bg);color:var(--firm);border-color:var(--firm)}
+.chips button[aria-pressed="true"][data-v="assume"]{background:var(--assume-bg);color:var(--assume);border-color:var(--assume)}
+.chips button[aria-pressed="true"][data-v="na"]{background:var(--na-bg);color:var(--na);border-color:var(--na)}
+.a label{font:500 .72rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.a input{width:100%;font:15px var(--body);padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.flag{background:var(--assume-bg);color:var(--assume);border-radius:8px;padding:8px 12px;font-size:.92rem}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.dock{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.dock .in{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.count{font-size:.92rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.btn{font:600 .9rem var(--body);border:0;background:var(--purple);color:#fff;border-radius:999px;padding:8px 18px;cursor:pointer}
+.btn.ghost{background:none;color:var(--purple);border:1px solid var(--purple)}
+textarea{width:100%;min-height:160px;font:13px/1.5 var(--mono);padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.toast{color:var(--firm);font-size:.9rem}
+@media (max-width:720px){.row{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCAzMDAgNjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iQWNtZSBIRiBsb2dvIj48cmVjdCB4PSIyIiB5PSI4IiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMiIgZmlsbD0iIzFGOEE5OSIvPjxwYXRoIGQ9Ik0xNCA0MiBMMjYgMTQgTDM4IDQyIE0xOSAzNCBIMzMiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSI2MiIgeT0iMzEiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEwMzI0QSI+QWNtZSBIRjwvdGV4dD48dGV4dCB4PSI2MyIgeT0iNTAiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjIuMiIgZmlsbD0iIzFGOEE5OSI+SFVNQU4gRkFDVE9SUzwvdGV4dD48L3N2Zz4=" alt="Acme HF"></div>
+  <div class="eyebrow">Timeline tool &#xb7; Step 1 &#xb7; Inputs to confirm</div>
+  <h1>Timeline Tool Inputs</h1>
+  <p class="lede">Everything the timeline tool needs to draw a Gantt for a Word SOW or PowerPoint deck. For each item, mark whether the client usually gives us a firm answer, or whether we assume a default. Edit the suggested default where ours differs, then copy your answers back to Claude.</p>
+</header>
+
+<div class="how">
+  <div><b>Firm</b>The client or intake gives us a date or duration. The tool asks for it every time.</div>
+  <div><b>Assume</b>The tool fills the default below automatically. You can still override it per proposal.</div>
+  <div><b>Not needed</b>Leave it out of the tool.</div>
+  <div><b>Auto</b>Items marked "from intake" or "from calculator" are filled for you, no extra question.</div>
+</div>
+
+<div id="secs"></div>
+
+<section>
+  <h2>Your answers</h2>
+  <p class="lede" style="font-size:.95rem">Paste this into the chat. It only lists items you changed or marked.</p>
+  <textarea id="out" readonly aria-label="Answers to copy"></textarea>
+</section>
+</div>
+
+<div class="dock"><div class="in">
+  <span class="count" id="count"></span>
+  <span class="toast" id="toast" aria-live="polite"></span>
+  <span style="display:flex;gap:8px"><button class="btn ghost" id="reset" type="button">Reset</button><button class="btn" id="copy" type="button">Copy answers for Claude</button></span>
+</div></div>
+
+<script>
+const SECS = [
+ {t:"Project dates", p:"Anchors for every timeline. Week 1 = the week work starts.", rows:[
+  ["P1","Project start / contract signature","Firm date if known; otherwise the timeline is shown in relative weeks (Week 1, Week 2\u2026).","Relative weeks","All tasks count from here."],
+  ["P2","Kickoff lag after signature","Template wording: work begins within 5 business days of the signed SOW.","1 week","Kickoff can't start before this."],
+  ["P3","Target study execution window","From intake (Target study execution). If blank, the tool works forward from start.","From intake","If firm, the tool works backward from it and warns when recruitment / prep don't fit."],
+  ["P4","Hard project end / submission deadline","From intake (Target project end).","From intake","Tool flags if the plan runs past it."],
+  ["P5","Client review time per document round","How long the client takes to return comments on a draft.","1 week","Adds after each draft of every document."],
+  ["P6","Review rounds per document","Template assumption: 3 clarification meetings and 2 rounds of review.","2 rounds","Draft \u2192 client review \u2192 revise \u2192 client review \u2192 final."],
+  ["P7","Holidays / blackout weeks","e.g., late December, client shutdowns.","None","Tool skips these weeks for study days."]
+ ]},
+ {t:"Study: set-up", p:"Per study (formative or validation). Several of these overlap.", rows:[
+  ["S1","Onboarding / kickoff","Kickoff meeting(s), product demo, document review.","1 week","Week 1. Overlaps screener finalization and the start of recruitment."],
+  ["S2","Screener drafting + client approval","Recruitment can't start until the screener is approved.","1 week","Starts with kickoff. Recruitment starts the week after approval (or same week if approved early)."],
+  ["S3","Recruitment period","You said 4\u20136 weeks. Note: Appendix 1 of the SOW template says a minimum of 6 weeks.","5 weeks (4\u20136)","Starts after screener approval (and after IRB approval if IRB applies). Ends the week before study conduct."],
+  ["S4","Time Booking Form signed","SOW: study days must be booked at least 4 weeks before the study.","4 weeks before study","Milestone only (shown as a marker)."],
+  ["S5","Study prep (protocol, moderator script, data sheets, demographics)","Runs alongside recruitment.","4 weeks","Starts after kickoff; protocol client review sits inside it. Must finish before the dry run."],
+  ["S6","IRB review (if Expedited or Full)","From intake (IRB). Recruiting materials and study documents are submitted for review.","Expedited 2 wks \u00b7 Full 4 wks","Starts after protocol draft; recruitment can't start until approved."],
+  ["S7","Device units / study model received from client","SOW template: rough prototypes 2 weeks (early) or 4 weeks (later) before the study.","2\u20134 weeks before study","Milestone; prep and dry run depend on it."],
+  ["S8","Dry run","Internal dry run of the protocol.","Week before study","Inside the last prep week."],
+  ["S9","Pilot sessions","From intake (pilot days) + time to update materials.","Pilot days + 1 week","Sits between dry run and main study conduct."]
+ ]},
+ {t:"Study: conduct and reporting", p:"Execution length comes straight from the pricing calculator.", rows:[
+  ["E1","Study conduct (session days)","From calculator: session days (incl. parallel teams), converted at 5 study days per week.","From calculator","Starts after recruitment + prep + pilot. Partial weeks round up."],
+  ["E2","Preliminary findings","End-of-day / end-of-week emails during conduct.","During conduct","Shown as a note, not a bar."],
+  ["E3","Data analysis + draft report","You said 3\u20134 weeks.","3 weeks formative \u00b7 4 weeks validation","Starts the week after the last session. Ends with 'Deliver draft report'."],
+  ["E4","Client review of draft report","SOW Appendix 1 allows up to 1 month before the report is treated as final.","2 weeks","After draft report."],
+  ["E5","Final report","Revise and deliver final.","1 week","After client comments. Ends with 'Deliver final report'."],
+  ["E6","Executive summary PPT","SOW: within 1 week of the final Word report.","1 week","After final report (can overlap)."],
+  ["E7","Gap between studies (multiple studies)","Design iteration time between, e.g., formative 1 and formative 2, or formative and validation.","4 weeks","Next study's recruitment can overlap this gap."]
+ ]},
+ {t:"Other deliverables", p:"Default durations by size (Small / Medium / Large) from the pricing tiers. Most can run in parallel with study work.", rows:[
+  ["D1","Develop Use-Related Risk Analysis","Size from URRA rows (0\u201350 / 50\u2013125 / 125\u2013250).","2 / 3 / 4 weeks","After onboarding. For a validation study it must be drafted before the protocol (critical tasks)."],
+  ["D2","URRA review","Review of client URRA + meeting.","1 / 1 / 2 weeks","After the client sends their URRA."],
+  ["D3","Use Specification","","2 weeks","After onboarding. Feeds the protocol and URRA."],
+  ["D4","IFU expert review / development","Three optional lines: expert review, refinement after formative, IFU verification.","Review 2 / 3 / 4 \u00b7 Refine 1 \u00b7 Verify 2 weeks","Review after onboarding; refinement after the formative report; verification after the final IFU."],
+  ["D5","Heuristic analysis / expert UI review","","1 / 1 / 2 weeks","After onboarding and device access."],
+  ["D6","Minimum viable commercial training","Checklist (+ presentation).","2 / 2 / 3 weeks","Must finish before validation study prep ends (participants are trained in sessions)."],
+  ["D7","Pre-Sub study documents (validation protocol for FDA)","","2 / 3 / 3 weeks","Before the Pre-Sub submission."],
+  ["D8","FDA Pre-Sub: submission \u2192 meeting","Time from submission to the FDA meeting. Regulatory input needed \u2013 please confirm our usual planning number.","10 weeks (to confirm)","After Pre-Sub documents. Validation study conduct typically waits for FDA feedback."],
+  ["D9","Pre-Sub meeting support","Slides before, minutes after. Always remote.","Slides 1 wk before \u00b7 minutes 1 wk after","Around the FDA meeting date (firm once FDA schedules it)."],
+  ["D10","HFE Submission Report \u2013 Version 1 (for Pre-Sub)","","4 / 5 / 6 weeks","Before Pre-Sub submission."],
+  ["D11","HFE Submission Report \u2013 Version 2","Adds Section 8 after validation.","2 weeks","After the validation final report."],
+  ["D12","FDA HFE Submission Report (single full version)","","6 / 7 / 8 weeks","Drafting can start during the study; finishes after the validation final report."],
+  ["D13","FDA-compliant HF SOP","","2 / 2 / 3 weeks","Independent; anytime."],
+  ["D14","HF SOP for IEC 62366-1","","3 / 3 / 4 weeks","Independent; anytime."],
+  ["D15","IEC 62366-1 Usability Engineering File","","3 / 4 / 5 weeks","Needs the client's documents; usually after studies."],
+  ["D16","Gap analysis (EU MDR / IEC 62366-1)","","1 / 2 / 2 weeks","Independent; usually early."],
+  ["D17","User Interface Evaluation Plan","","2 / 3 / 4 weeks","Before the first study protocol."],
+  ["D18","Project management","","Whole project","Spans start to final delivery (not drawn as a bar unless you want it)."]
+ ]},
+ {t:"Overlap rules", p:"How the tool lets tasks run at the same time. Mark Assume to keep a rule as the default.", rows:[
+  ["O1","Onboarding overlaps recruitment","Recruitment can start in the kickoff week once the screener is approved.","Yes","S1 \u2194 S3"],
+  ["O2","Study prep runs in parallel with recruitment","","Yes","S5 \u2194 S3"],
+  ["O3","Document deliverables run in parallel with study set-up","e.g., URRA review during recruitment.","Yes","D-items \u2194 S-items unless a dependency above says otherwise"],
+  ["O4","Document deliverables run in parallel with each other","Limited by team capacity.","Max 2 at once","Tool staggers a third one."],
+  ["O5","Analysis starts during long studies","For studies longer than 2 weeks, analysis starts in conduct week 2.","No","E1 \u2194 E3"],
+  ["O6","Next study recruitment overlaps the previous report","","Yes","E3/E4 \u2194 next S3"]
+ ]}
+];
+const KEY = "cm_timeline_inputs_v1";
+let A = {};
+try { A = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { A = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(A)); } catch (e) {} };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ALL = SECS.flatMap(s => s.rows.map(r => ({sec: s.t, id: r[0], t: r[1], d: r[2], def: r[3], dep: r[4]})));
+function render(){
+  document.getElementById("secs").innerHTML = SECS.map(s => `<section><div class="sec-h"><h2>${esc(s.t)}</h2><p>${esc(s.p)}</p></div>` +
+    s.rows.map(r => {
+      const a = A[r[0]] || {};
+      return `<div class="row" data-id="${r[0]}" data-s="${a.s||""}">
+        <div class="q"><span class="id">${r[0]}</span><span class="t">${esc(r[1])}</span>${r[2]?`<span class="d">${esc(r[2])}</span>`:""}<span class="dep"><b>Depends / overlaps</b>${esc(r[4])}</span></div>
+        <div class="a"><div class="chips" role="group" aria-label="${esc(r[1])} status">
+          ${[["firm","Firm"],["assume","Assume"],["na","Not needed"]].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${a.s===v}">${l}</button>`).join("")}</div>
+          <label for="v_${r[0]}">Default / value</label><input id="v_${r[0]}" data-f="v" value="${esc(a.v ?? r[3])}">
+          <label for="n_${r[0]}">Note</label><input id="n_${r[0]}" data-f="n" value="${esc(a.n || "")}" placeholder="Optional">
+        </div></div>`;
+    }).join("") + `</section>`).join("");
+  out();
+}
+function out(){
+  const done = ALL.filter(r => A[r.id] && A[r.id].s).length;
+  document.getElementById("count").textContent = `${done} of ${ALL.length} marked`;
+  const lines = ["TIMELINE TOOL INPUTS"];
+  let sec = "";
+  ALL.forEach(r => {
+    const a = A[r.id] || {}; const changed = a.v !== undefined && a.v !== r.def;
+    if (!a.s && !changed && !a.n) return;
+    if (r.sec !== sec) { sec = r.sec; lines.push("", "== " + sec.toUpperCase() + " =="); }
+    lines.push(`${r.id} ${r.t}: ${a.s ? {firm:"FIRM",assume:"ASSUME",na:"NOT NEEDED"}[a.s] : "(unmarked)"} | ${changed ? "default changed to: " + a.v : "default: " + r.def}${a.n ? " | note: " + a.n : ""}`);
+  });
+  const un = ALL.filter(r => !(A[r.id] && A[r.id].s)).map(r => r.id);
+  if (un.length) lines.push("", "Unmarked: " + un.join(", "));
+  document.getElementById("out").value = lines.join("\n");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".chips button"); if (!b) return;
+  const row = b.closest(".row"), id = row.dataset.id; A[id] = A[id] || {};
+  A[id].s = A[id].s === b.dataset.v ? "" : b.dataset.v;
+  row.dataset.s = A[id].s;
+  row.querySelectorAll(".chips button").forEach(x => x.setAttribute("aria-pressed", x.dataset.v === A[id].s));
+  save(); out();
+});
+document.addEventListener("input", e => {
+  const f = e.target.dataset.f; if (!f) return;
+  const id = e.target.closest(".row").dataset.id; A[id] = A[id] || {}; A[id][f] = e.target.value; save(); out();
+});
+document.getElementById("copy").onclick = () => {
+  const ta = document.getElementById("out"), t = document.getElementById("toast");
+  const ok = () => { t.textContent = "Copied. Paste it into the chat."; setTimeout(() => t.textContent = "", 3500); };
+  try { navigator.clipboard.writeText(ta.value).then(ok, () => { ta.focus(); ta.select(); t.textContent = "Press Ctrl+C / Cmd+C to copy."; }); }
+  catch (_) { ta.focus(); ta.select(); t.textContent = "Press Ctrl+C / Cmd+C to copy."; }
+};
+document.getElementById("reset").onclick = e => {
+  const b = e.currentTarget;
+  if (b.dataset.armed) { A = {}; save(); render(); delete b.dataset.armed; b.textContent = "Reset"; }
+  else { b.dataset.armed = "1"; b.textContent = "Click again to clear"; setTimeout(() => { delete b.dataset.armed; b.textContent = "Reset"; }, 3000); }
+};
+render();
+</script>
+
+</body></html>
