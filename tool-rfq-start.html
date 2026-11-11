@@ -1,0 +1,160 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Start from an RFQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: quick estimator &#x2014; header, one compact input card (study + groups + extras), live range table styled for email, copy bar */
+:root{
+  --bg:#F6FAFA; --surface:#ffffff; --fg:#16222B; --muted:#5A6872; --line:#DBE3E8; --chip:#E9F5F6;
+  --navy:#0C273A; --purple:#196972; --pink:#F4B782; --ok:#1f6b4a; --warn-bg:#fff4dc; --warn-ink:#7a5000;
+  --display:"Sora",ui-sans-serif,system-ui,sans-serif; --body:"Source Sans 3",ui-sans-serif,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111C24;--surface:#1A2933;--fg:#EBF1F5;--muted:#A6B6C2;--line:#2D404D;--chip:#253947;--navy:#C6E1F5;--purple:#A4E7EF;--ok:#8fe0b6;--warn-bg:#3a2d10;--warn-ink:#f4cf7a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111C24;--surface:#1A2933;--fg:#EBF1F5;--muted:#A6B6C2;--line:#2D404D;--chip:#253947;--navy:#C6E1F5;--purple:#A4E7EF;--ok:#8fe0b6;--warn-bg:#3a2d10;--warn-ink:#f4cf7a;color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:22px 60px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+h1,h2{font-family:var(--display);color:var(--navy);margin:0;font-weight:600;text-wrap:balance}
+h1{font-size:clamp(1.5rem,3vw,2rem)} h2{font-size:1.1rem}
+header{display:grid;gap:6px;border-bottom:3px solid var(--pink);padding-bottom:14px}
+.logo{background:#fff;border-radius:8px;padding:7px 11px;line-height:0;justify-self:start}.logo img{height:32px;width:auto}
+.eyebrow{font:500 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--purple)}
+.lede{margin:0;color:var(--muted);max-width:74ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.f{display:grid;gap:4px} .f label,.lab{font:500 .72rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+input,select{font:15px var(--body);padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+.gt{border-collapse:collapse;width:100%} .gt th{font:500 .68rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 6px}
+.gt td{padding:4px 6px;border-top:1px solid var(--line)} .tbl{overflow-x:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.88rem;cursor:pointer;background:var(--surface)}
+.chips input{width:auto}
+.chips label:has(input:checked){border-color:var(--purple);background:var(--chip);color:var(--purple);font-weight:600}
+.btn{font:600 .88rem var(--body);border:0;background:var(--purple);color:#fff;border-radius:999px;padding:7px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--purple);border:1px solid var(--purple)} .x{background:none;border:0;color:var(--muted);cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.out{background:#fff;border-radius:10px;border:1px solid var(--line);padding:16px;overflow-x:auto;color:#16222B}
+.bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.status{font-size:.88rem;color:var(--ok)} .note{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:8px 12px;font-size:.9rem}
+details summary{cursor:pointer;color:var(--purple);font-weight:600}
+.f textarea,textarea{font:15px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0;resize:vertical}
+.pre{white-space:pre-wrap;font:12.5px/1.45 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0;max-height:340px;overflow:auto}
+.steps{margin:0;padding-left:20px;display:grid;gap:8px} .steps li{padding-left:4px}
+.hintx{font-size:.86rem;color:var(--muted);margin:0}
+textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+</style>
+
+
+<div class="wrap">
+<header>
+  <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCAzMDAgNjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iQWNtZSBIRiBsb2dvIj48cmVjdCB4PSIyIiB5PSI4IiB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMiIgZmlsbD0iIzFGOEE5OSIvPjxwYXRoIGQ9Ik0xNCA0MiBMMjYgMTQgTDM4IDQyIE0xOSAzNCBIMzMiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSI2MiIgeT0iMzEiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEwMzI0QSI+QWNtZSBIRjwvdGV4dD48dGV4dCB4PSI2MyIgeT0iNTAiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjIuMiIgZmlsbD0iIzFGOEE5OSI+SFVNQU4gRkFDVE9SUzwvdGV4dD48L3N2Zz4=" alt="Acme HF"></div>
+  <div class="eyebrow">Proposal tools &#xb7; Optional first step</div>
+  <h1>Start from an RFQ</h1>
+  <p class="lede">Turn a new RFQ into a summary, a pre-filled SME intake, questions for the client and a draft email to send them. Claude does the reading, so this page builds the request for you to paste into Claude. Nothing you type here is saved or sent anywhere. In this portfolio demo there is no Claude behind the prompt, so a sample reply for a made-up RFQ is included at the bottom of the page.</p>
+</header>
+
+<section class="card" aria-labelledby="h1s">
+  <h2 id="h1s">1. Tell Claude about the RFQ</h2>
+  <div class="grid">
+    <div class="f"><label for="cl">Client name (optional)</label><input id="cl" placeholder="If you know it"></div>
+    <div class="f"><label for="pt">Proposal you expect to write (optional)</label><select id="pt"><option value="">Not sure yet</option><option>Ballpark quote</option><option>PowerPoint proposal</option><option>Word SOW</option><option>Amendment / change order</option></select></div>
+  </div>
+  <div class="f"><label for="rfq">RFQ text (optional)</label><textarea id="rfq" rows="9" placeholder="Paste the RFQ or the client's email here. Or leave this empty and attach the RFQ file (PDF or Word) to your message in Claude."></textarea>
+    <p class="hintx">Attaching the file is better for long RFQs and tables. Do not include real patient data.</p></div>
+  <div class="f"><label for="nt">Anything else Claude should know (optional)</label><textarea id="nt" rows="3" placeholder="For example: notes from a call with the client, what the client already told us, deadlines."></textarea></div>
+  <div class="chips"><label><input type="checkbox" id="sim" checked> Also list the 3 closest past proposals</label></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="build" type="button">Build my prompt for Claude</button><span class="status" id="msg" aria-live="polite"></span></div>
+  <div id="outBox" hidden style="display:grid;gap:10px">
+    <p class="hintx" style="color:var(--fg)">Open Claude and start a <b>Cowork</b> session (not a regular chat). If your RFQ is a file, attach it. Paste this in and send. Claude will ask you to approve the Proposal Index folder; approve it.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://claude.ai/new" target="_blank" rel="noopener" style="text-decoration:none">Open Claude</a><button class="btn ghost" id="again" type="button">Copy prompt again</button></div>
+    <pre class="pre" id="prompt"></pre>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h2s">
+  <h2 id="h2s">2. What Claude sends back</h2>
+  <ol class="steps">
+    <li><b>RFQ at a glance.</b> A short summary: client, product, intended users, what is being asked, key dates, how the proposal must be submitted.</li>
+    <li><b>Pre-filled SME intake.</b> One line that starts with <b>RFQ-PREFILL</b>. It carries every answer the RFQ states, such as device type, study type and user groups.</li>
+    <li><b>Questions for the client.</b> Only what the RFQ leaves open and that changes scope or price, with the assumption we will use if they do not answer.</li>
+    <li><b>A draft email to the client</b> with those questions, ready to edit and send.</li>
+    <li><b>Flags and similar proposals.</b> Anything unusual (tight dates, heavy contract terms) and the 3 closest past proposals with links.</li>
+  </ol>
+</section>
+
+<section class="card" aria-labelledby="h3s">
+  <h2 id="h3s">3. What to do with it</h2>
+  <ol class="steps">
+    <li>Copy the <b>RFQ-PREFILL</b> line from Claude's reply.</li>
+    <li>Open the SME intake, paste the line into <b>Start from an RFQ</b> at the top, and click <b>Fill from RFQ</b>. Check every answer marked as pre-filled and fix anything wrong. The SME still answers whatever the RFQ did not say.</li>
+    <li>Edit the draft email and send it to the client yourself. Claude never sends anything.</li>
+    <li>When the SME intake is complete, continue with the Comm Ops intake as usual.</li>
+  </ol>
+  <div><button class="btn" id="goSme" type="button">Open the SME intake</button></div>
+  <p class="hintx">Everything Claude produces here is a first pass for a Acme HF reviewer to check, including anything about regulations or clinical details. It comes from the RFQ text only.</p>
+</section>
+<section class="card" aria-labelledby="h4s">
+  <h2 id="h4s">Demo: a sample reply for a made-up RFQ</h2>
+  <p class="hintx">In the real tool, Claude reads the client's RFQ and sends back the pieces below. This one is invented (a fictional client, device and RFQ) so you can try the rest of the flow.</p>
+  <details open><summary>RFQ at a glance</summary><ul class="steps" style="margin-top:8px">
+    <li>Client: Northwind Devices (stated). Product: PenFlow autoinjector for adult self-injection (stated).</li>
+    <li>Ask: a human factors validation study with 15 nurses, 15 patients and 8 caregivers, plus a use specification and review of the client's use-related risk analysis (stated).</li>
+    <li>Use environments: home and pharmacy (stated). Pilot session expected (inferred from the study plan).</li>
+    <li>Dates: project start in January 2027, finish by May 2027. Proposal due in two weeks, submitted by email (stated).</li>
+    <li>Pricing format: one fixed fee per deliverable (stated).</li>
+  </ul></details>
+  <details><summary>Questions for the client, with the assumption if they do not answer</summary><ol class="steps" style="margin-top:8px">
+    <li><b>Affects price.</b> How long is each session, and is training provided before it? Assumption: 1 hour for nurses, 1.5 hours for patients, no training.</li>
+    <li><b>Affects price.</b> Who recruits the participants? Assumption: we recruit.</li>
+    <li><b>Affects scope.</b> Is the URRA final or still changing? Assumption: final, 50 to 125 rows.</li>
+    <li><b>Good to confirm.</b> Will the device be production-equivalent at the time of the study? Assumption: yes.</li>
+  </ol></details>
+  <details><summary>Draft email to the client</summary><pre class="pre" style="margin-top:8px">Subject: Northwind Devices PenFlow RFQ: a few questions
+
+Hello [Name],
+
+Thank you for the RFQ for the PenFlow human factors validation study. To give you an accurate scope and price, could you confirm:
+
+1. Session length for each user group, and whether participants are trained before the session.
+2. Whether you would like us to recruit participants.
+3. Whether the use-related risk analysis is final, and roughly how many rows it has.
+4. Whether the device will be production-equivalent at the time of the study.
+
+If we do not hear back by [date], we will assume 1-hour sessions for nurses and caregivers, 1.5 hours for patients, no training, that we recruit, a final risk analysis of 50 to 125 rows, and a production-equivalent device.
+
+Best regards,
+[Name]</pre></details>
+  <p class="hintx" style="margin-top:10px"><b>Pre-filled SME intake.</b> This is the line Claude would give you. Copy it, open the SME intake, paste it into <b>Start from an RFQ</b> and click <b>Fill from RFQ</b>.</p>
+  <pre class="pre" id="sampleLine">RFQ-PREFILL: {"v":1,"answers":{"proposalType":"Word SOW","clientName":"Northwind Devices","projectName":"PenFlow autoinjector","deviceType":"Autoinjector / pen injector","stage":"Production-equivalent","envs":["Home","Pharmacy"],"hasStudy":"Yes","studyType":"Validation / Summative","studySite":"Acme HF facility","training":"None","pilot":"Yes","irb":"Expedited","hasTimeline":"Yes","tStart":"January 2027","tEnd":"May 2027","otherDelivs":["Use Specification","Use-Related Risk Analysis (review)"],"urraRows":"50–125 rows"},"groups":[{"type":"Nurses","n":"15","sh":"1"},{"type":"Patients","n":"15","sh":"1.5"},{"type":"Caregivers","n":"8","sh":"1"}],"notes":{"deviceType":"RFQ section 2","studyType":"RFQ asks for a validation study","groups":"RFQ asks for 15 nurses, 15 patients, 8 caregivers","tStart":"RFQ: start in January","otherDelivs":"RFQ section 4 lists a use specification and URRA review"}}</pre>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="copySample" type="button">Copy the sample line</button><button class="btn ghost" id="goSme2" type="button">Open the SME intake</button><span class="status" id="msg2" aria-live="polite"></span></div>
+</section>
+</div>
+
+<script>
+const byId=id=>document.getElementById(id);
+function buildPrompt(){
+  const client=byId("cl").value.trim(),type=byId("pt").value,rfq=byId("rfq").value.trim(),notes=byId("nt").value.trim(),sim=byId("sim").checked;
+  const L=[];
+  L.push('Please use the proposal-draft-reference-tool skill and run its "RFQ intake" step for a new RFQ. Do not draft the proposal yet and do not price anything.');
+  L.push('Run this in a Cowork session. First, immediately request access to the folder C:\\Users\\<my user name>\\Acme HF\\Proposal Process Project - Proposal Index (do not ask me whether it is synced), because the search for similar past proposals needs it.');
+  L.push('Client: '+(client||'not stated here (use what the RFQ says)'));
+  L.push('Proposal I expect to write: '+(type||'not sure yet'));
+  L.push(rfq?('RFQ text:\n"""\n'+rfq+'\n"""'):'The RFQ is attached to this message (read all of it, including tables and appendices). If you cannot find an attachment, tell me and wait.');
+  if(notes)L.push('My notes:\n'+notes);
+  L.push('Follow the skill\'s RFQ intake step exactly and give me, in this order: (1) RFQ at a glance, with each line marked stated or inferred; (2) the pre-filled SME intake as one RFQ-PREFILL line made with scripts/make_rfq_prefill.py, alone in a code block, plus a plain list of what the SME still has to answer; (3) questions for the client, grouped by what they affect, each with the assumption we will use if they do not answer; (4) a draft email to the client with those questions; (5) flags for the proposal team'+(sim?'; (6) the 3 closest past proposals from the full proposal index with their browser links.':'. Skip the search for similar past proposals.'));
+  L.push('Use precise HFE terminology consistent with FDA Human Factors guidance and IEC 62366-1: say "use-related risk" (not "user error"), "intended users" and "use scenarios" (not "end users" or "situations"), "summative evaluation" and "formative evaluation" (not "usability test" or "final study"), "simulated use" (not "mock use"), and "critical tasks" for tasks where failure could cause serious harm.');
+  L.push('Only fill in what the RFQ states or clearly implies, and say what you are unsure of. End with the skill\'s review note and the skill version line.');
+  return L.join('\n');
+}
+async function copyTxt(t){try{await navigator.clipboard.writeText(t);return true}catch(e){return false}}
+byId("build").onclick=async()=>{const p=buildPrompt();byId("outBox").hidden=false;byId("prompt").textContent=p;
+  const ok=await copyTxt(p);byId("msg").textContent=ok?"Prompt copied. Paste it into Claude.":"Could not copy automatically. Select the text below and copy it.";
+  if(byId("rfq").value.length>40000)byId("msg").textContent+=" This RFQ is very long: attaching the file in Claude may work better.";
+  byId("outBox").scrollIntoView({block:"nearest"})};
+byId("again").onclick=async()=>{const ok=await copyTxt(byId("prompt").textContent);byId("msg").textContent=ok?"Copied.":"Could not copy automatically."};
+byId("copySample").onclick=async()=>{const ok=await copyTxt(byId("sampleLine").textContent);byId("msg2").textContent=ok?"Copied. Now open the SME intake and paste it in.":"Could not copy automatically. Select the line and copy it."};
+byId("goSme2").onclick=()=>byId("goSme").onclick();
+byId("goSme").onclick=()=>{try{if(window.parent&&window.parent!==window&&typeof window.parent.openTool==="function"){window.parent.openTool("tool-sme-intake.html","SME intake");return}}catch(e){}location.href="tool-sme-intake.html"};
+</script>
+</body></html>
