@@ -38,6 +38,7 @@
     <p class="welcome-line">What are you working on today?</p>
     <h1 class="home-heading">Proposal Assistant</h1><p class="demo-banner" style="margin:0 0 18px;padding:10px 14px;border:1px solid var(--border);border-left:4px solid var(--pink);border-radius:8px;background:#fff;font-size:14px;color:var(--text-muted);">Portfolio demo by Corien Zavod. Everything here is fictional: the company (Acme HF), clients, people, proposals and rates are invented, and nothing is sent anywhere. The tools run in your browser.</p>
     <p id="home-stats" class="home-stats"></p>
+    <p id="home-schedule-nudge" class="home-stats" hidden></p>
 <section class="home-section">
     <h2 class="home-section-title">Proposal drafting</h2>
     <p class="home-section-sub">Draft a proposal prompt for Claude, or find similar past proposals.</p>
@@ -147,6 +148,7 @@
     <h1>Draft a proposal</h1>
     <p class="login-desc">This builds the prompt for the drafting skill in Cowork. Complete the SME intake and the Comm Ops intake first: the skill uses their final answers to price the proposal and build the draft.</p>
     <p class="login-desc">Starting from a new RFQ? Use <a href="#" id="draft-to-rfq">Start from an RFQ</a> first: it summarizes the RFQ, pre-fills the SME intake and drafts the questions for the client.</p>
+    <p class="login-desc">Working on it now? <a href="#" id="draft-to-schedule">Add it to the team schedule</a> so the due date is visible, and use <b>Mark as sent</b> there when it goes out to schedule the client follow-up.</p>
     <form id="draft-form">
       <label>What do you want drafted?
         <select name="proposalType" id="draft-proposalType" required>
@@ -478,6 +480,7 @@
     <div id="schedule-account-box"></div>
     <div id="schedule-main" hidden>
       <button type="button" class="primary-btn" id="schedule-edit-my-btn" style="margin-top:16px;">Edit my schedule</button>
+      <div id="schedule-digest"></div>
       <div style="display:flex; align-items:center; justify-content:space-between; margin-top:24px;">
         <h2 style="margin:0;">Everyone's schedule</h2>
         <button type="button" class="quiz-option-btn" id="schedule-refresh-btn">Refresh now</button>
