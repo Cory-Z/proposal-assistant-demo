@@ -619,6 +619,12 @@ document.getElementById('outcome-find').addEventListener('input', renderOutcomeM
 document.getElementById('outcome-result').addEventListener('change', (e) => {
   document.getElementById('outcome-reason-row').hidden = !['Lost', 'No response', 'Withdrawn by client'].includes(e.target.value);
 });
+document.getElementById('outcome-form').addEventListener('reset', () => {
+  document.getElementById('outcome-output').hidden = true;
+  document.getElementById('outcome-output').innerHTML = '';
+  document.getElementById('outcome-reason-row').hidden = true;
+  setTimeout(renderOutcomeMatches, 0);
+});
 document.getElementById('outcome-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
