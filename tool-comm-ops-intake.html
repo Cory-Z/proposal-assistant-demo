@@ -72,6 +72,7 @@ textarea{width:100%;min-height:150px;font:12px/1.45 var(--f-mono);background:var
 .vrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .smeval{font-size:.85rem;color:var(--muted)} .smeval b{color:var(--fg)}
 .import{display:grid;gap:8px}
+.bn{font-size:.9rem;line-height:1.45}.bn.warn{background:#fff4dc;color:#7a5000;border-radius:8px;padding:8px 10px}.bn small{display:block;color:#5A6872;margin-top:6px;font-size:.8rem}
 .err{color:var(--opt-fg);font-size:.88rem}
 </style>
 <div class="wrap">
@@ -87,6 +88,7 @@ textarea{width:100%;min-height:150px;font:12px/1.45 var(--f-mono);background:var
     <aside>
       <div class="panel"><h3>Progress</h3><div class="bar"><i id="bar"></i></div><div class="note" id="progTxt"></div><ul class="steps" id="steps"></ul></div>
       <div class="panel" id="estPanel" hidden><h3>Estimate (live)</h3><div class="est" id="est"></div><div class="grand"><span>Grand total</span><b id="grand">&#x2013;</b></div><p class="note">Current Acme HF calculator logic and rate card (USD). Draft for review, not a quote.</p></div>
+      <div class="panel" id="benchPanel" hidden><h3>Past-proposal check</h3><div id="bench"></div></div>
       <div class="panel"><h3 id="sendH"></h3><div id="missing"></div><button class="btn primary" id="copy" type="button"></button><span class="toast" id="toast" aria-live="polite"></span><textarea id="out" readonly aria-label="Summary to copy"></textarea></div>
     </aside></div>
 </div>
@@ -365,6 +367,28 @@ function importHTML(){return `<section class="card" id="sec_import"><h2><span cl
  <div class="hint">Paste everything the SME copied from the SME form (it ends with an <b>SME-CODE</b> line), then click Import.</div>
  <textarea id="imp" aria-label="Paste SME answers" placeholder="Paste the SME's copied answers here"></textarea>
  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="btn primary" id="doImport">Import</button><span class="err" id="impErr"></span>${SME?`<span class="toast">Imported ${esc2(SME._when||"")}${SME.clientName?" \u00b7 "+esc2(SME.clientName):""}</span>`:""}</div></div></section>`}
+/* ---------- past-proposal check: rough sanity check of the grand total against totals read from past proposals ---------- */
+let PAST,PASTTRY=false;
+function loadPast(){if(PASTTRY)return;PASTTRY=true;fetch("proposals/internal-index.json").then(r=>r.ok?r.json():null).then(j=>{PAST=Array.isArray(j)?j:null;refresh()}).catch(()=>{PAST=null;refresh()})}
+const STUDYTAG={"Early Formative":"Formative evaluation","Later Formative":"Formative evaluation","Validation / Summative":"Summative evaluation"};
+const CURSYM={USD:"$",GBP:"£",EUR:"€"};
+const qtl=(v,q)=>{v=[...v].sort((a,b)=>a-b);const k=(v.length-1)*q,lo=Math.floor(k),hi=Math.min(lo+1,v.length-1);return v[lo]+(v[hi]-v[lo])*(k-lo)};
+function benchHTML(grand,study){
+ const note=t=>`<div class="note">${t}</div>`;
+ if(!study)return note("This check needs a usability study. Add one in the SME answers.");
+ const tag=STUDYTAG[finalVal("studyType")],cur=finalVal("currency")||"USD",sym=CURSYM[cur];
+ if(!tag||!sym)return note("No past-proposal check for this study type or currency.");
+ if(PAST===undefined)return note("Loading past proposals…");
+ if(PAST===null)return note("Past proposals could not be loaded, so there is no check.");
+ const T=[];PAST.forEach(e=>{if(e.kind!=="Proposal"||!e.current||e.currency!==cur||!(e.study||[]).includes(tag))return;
+  const s=new Set(((e.dealSizeBand||"").match(/[$£€]\s?[\d,]{4,}/g)||[]).map(x=>parseInt(x.replace(/[^\d]/g,""),10)));if(s.size===1)T.push([...s][0])});
+ if(T.length<5)return note(`Only ${T.length} comparable past proposals have a readable total, so there is no check for this study type.`);
+ const f=v=>sym+Math.round(v/1000).toLocaleString("en-US")+"k",p10=qtl(T,.1),p25=qtl(T,.25),p50=qtl(T,.5),p75=qtl(T,.75),p90=qtl(T,.9),pc=Math.round(100*T.filter(v=>v<=grand).length/T.length);
+ let head,warn=false;
+ if(grand>=p25&&grand<=p75)head="In line with past proposals.";
+ else if(grand>=p10&&grand<=p90)head=(grand<p25?"Below":"Above")+" the middle half, but inside the usual range.";
+ else{warn=true;head=(grand<p10?"Check this: far below":"Check this: far above")+" what past proposals usually show.";}
+ return `<div class="bn${warn?" warn":""}"><b>${head}</b> The total of ${f(grand)} is higher than about ${pc}% of ${T.length} past ${tag.toLowerCase()} proposals (middle half ${f(p25)} to ${f(p75)}, median ${f(p50)}).${T.length<8?" Few comparable proposals, so read this loosely.":""}${warn?" Look for a missing deliverable, a wrong participant count or a typing slip.":""}<small>A rough check on totals read automatically from past proposals, which include all of their deliverables. It catches big slips; it does not say a price is right or wrong, and the drafting skill never changes a calculated price to match.</small></div>`}
 function render(){
  const secs=SCHEMA.sections.map(s=>({t:s.t,qs:s.qs.filter(q=>mine(q))})).filter(s=>s.qs.length);
  let n=0;document.getElementById("form").innerHTML=(MODE==="co"?importHTML():"")+secs.map(s=>{const vis=s.qs.filter(showOK);if(!vis.length)return "";n++;
@@ -450,8 +474,8 @@ function refresh(){
  let r=null;
  if(MODE==="co"){const ep=document.getElementById("estPanel");ep.hidden=false;const study=finalVal("hasStudy")==="Yes";
   if(SME&&(!study||(SME.groups||[]).some(g=>g.type&&g.n))){if(study)r=toCalc();const E2=fullEst(r),$$=v=>"$"+Math.round(v).toLocaleString("en-US");
-   document.getElementById("est").innerHTML=[...E2.lines,...(study?[["Facility",E2.fac],["Recruitment",E2.rec],["Pass-through",E2.pass]]:[]),["Project management",E2.pm]].map(([k,v])=>`<div><span>${esc2(k)}</span><b>${$$(v)}</b></div>`).join("");document.getElementById("grand").textContent=$$(E2.grand)}
-  else{document.getElementById("est").innerHTML='<div class="note">Import SME answers (with at least one user group if there is a study) to see an estimate.</div>';document.getElementById("grand").textContent="\u2013"}}
+   document.getElementById("est").innerHTML=[...E2.lines,...(study?[["Facility",E2.fac],["Recruitment",E2.rec],["Pass-through",E2.pass]]:[]),["Project management",E2.pm]].map(([k,v])=>`<div><span>${esc2(k)}</span><b>${$$(v)}</b></div>`).join("");document.getElementById("grand").textContent=$$(E2.grand);document.getElementById("benchPanel").hidden=false;document.getElementById("bench").innerHTML=benchHTML(E2.grand,study)}
+  else{document.getElementById("est").innerHTML='<div class="note">Import SME answers (with at least one user group if there is a study) to see an estimate.</div>';document.getElementById("grand").textContent="\u2013";document.getElementById("benchPanel").hidden=true}}
  const m=missingList();
  document.getElementById("missing").innerHTML=m.length?`<div class="missing"><b>${m.length} item${m.length>1?"s":""} still open.</b> You can still copy; they'll be listed.<ul>${m.slice(0,6).map(x=>`<li>${esc2(x)}</li>`).join("")}${m.length>6?"<li>\u2026</li>":""}</ul></div>`:'<div class="toast">All required questions answered.</div>';
  document.getElementById("out").value=summary(r);
@@ -498,7 +522,7 @@ else{document.getElementById("stepLbl").textContent="Step 2 of 2 \u00b7 Commerci
  document.getElementById("subTxt").textContent="Import the SME's answers, verify their optional inputs, and complete the commercial inputs. Then copy the final summary to Claude.";
  document.getElementById("legend").innerHTML='<span><span class="badge b-opt">Verify SME input</span> Starts with the SME\'s answer (or the assumption if blank). Change if needed, then mark \u2713 Verified.</span><span><span class="badge b-co">Comm Ops \u00b7 required</span> Commercial Ops fills out.</span>';
  document.getElementById("sendH").textContent="Send to Claude";document.getElementById("copy").textContent="Copy final answers for Claude";}
-loadA();render();
+loadA();loadPast();render();
 </script>
 
 </body></html>
