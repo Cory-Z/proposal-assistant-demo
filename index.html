@@ -58,8 +58,14 @@
     </section>
 <section class="home-section">
     <h2 class="home-section-title">Proposal process tools</h2>
-    <p class="home-section-sub">Follow these in order: SME intake, then Comm Ops intake. The rest support pricing and timelines.</p>
+    <p class="home-section-sub">Got a new RFQ? Start there. Then follow in order: SME intake, then Comm Ops intake. The rest support pricing and timelines.</p>
     <div class="card-grid">
+<button class="big-card" type="button" data-tool="tool-rfq-start.html" data-title="Start from an RFQ">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 9h8"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Start from an RFQ</span>
+        <span class="card-desc">Optional first step: get an RFQ summary, a pre-filled SME intake, questions for the client and a draft email</span>
+      </button>
 <button class="big-card" type="button" data-tool="tool-sme-intake.html" data-title="SME intake">
         <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>
         <span class="card-accent"></span>
@@ -134,6 +140,7 @@
     <button class="back-link" id="back-from-draft" type="button">&larr; Back</button>
     <h1>Draft a proposal</h1>
     <p class="login-desc">This builds the prompt for the drafting skill in Cowork. Complete the SME intake and the Comm Ops intake first: the skill uses their final answers to price the proposal and build the draft.</p>
+    <p class="login-desc">Starting from a new RFQ? Use <a href="#" id="draft-to-rfq">Start from an RFQ</a> first: it summarizes the RFQ, pre-fills the SME intake and drafts the questions for the client.</p>
     <form id="draft-form">
       <label>What do you want drafted?
         <select name="proposalType" id="draft-proposalType" required>
