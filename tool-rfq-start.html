@@ -91,7 +91,7 @@ textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
     <li>Edit the draft email and send it to the client yourself. Claude never sends anything.</li>
     <li>When the SME intake is complete, continue with the Comm Ops intake as usual.</li>
   </ol>
-  <div><button class="btn" id="goSme" type="button">Open the SME intake</button></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn" id="goSme" type="button">Open the SME intake</button><button class="btn ghost" id="goSched" type="button">Add to team schedule</button></div>
   <p class="hintx">Everything Claude produces here is a first pass for a Acme HF reviewer to check, including anything about regulations or clinical details. It comes from the RFQ text only.</p>
 </section>
 <section class="card" aria-labelledby="h4s">
@@ -153,6 +153,7 @@ byId("build").onclick=async()=>{const p=buildPrompt();byId("outBox").hidden=fals
   if(byId("rfq").value.length>40000)byId("msg").textContent+=" This RFQ is very long: attaching the file in Claude may work better.";
   byId("outBox").scrollIntoView({block:"nearest"})};
 byId("again").onclick=async()=>{const ok=await copyTxt(byId("prompt").textContent);byId("msg").textContent=ok?"Copied.":"Could not copy automatically."};
+byId("goSched").onclick=()=>{try{if(window.parent&&window.parent!==window&&typeof window.parent.openScheduleWithPrefill==="function"){window.parent.openScheduleWithPrefill({taskType:"Drafting"});return}}catch(e){}alert("Open the Proposal status & team schedule tool from the home page to add this proposal.")};
 byId("copySample").onclick=async()=>{const ok=await copyTxt(byId("sampleLine").textContent);byId("msg2").textContent=ok?"Copied. Now open the SME intake and paste it in.":"Could not copy automatically. Select the line and copy it."};
 byId("goSme2").onclick=()=>byId("goSme").onclick();
 byId("goSme").onclick=()=>{try{if(window.parent&&window.parent!==window&&typeof window.parent.openTool==="function"){window.parent.openTool("tool-sme-intake.html","SME intake");return}}catch(e){}location.href="tool-sme-intake.html"};
