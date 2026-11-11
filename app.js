@@ -78,6 +78,7 @@ function showView(name) {
   views[name].hidden = false;
   currentViewName = name;
   window.scrollTo(0, name === 'home' ? homeScrollY : 0);
+  if (name === 'home') setTimeout(() => { try { refreshHomeScheduleNudge(); } catch (e) {} }, 300);
 }
 const ACCESS_KEY = 'acmeAccessEmail';
 function grantAccess(email) {
@@ -134,6 +135,7 @@ document.getElementById('back-from-tool').addEventListener('click', () => { docu
 document.getElementById('btn-schedule').addEventListener('click', () => { openScheduleTool(); showView('schedule'); });
 document.getElementById('back-from-draft').addEventListener('click', () => showView('home'));
 document.getElementById('draft-to-rfq').addEventListener('click', (e) => { e.preventDefault(); openTool('tool-rfq-start.html', 'Start from an RFQ'); });
+document.getElementById('draft-to-schedule').addEventListener('click', (e) => { e.preventDefault(); openScheduleWithPrefill({ taskType: 'Drafting' }); });
 document.getElementById('back-from-search').addEventListener('click', () => showView('home'));
 document.getElementById('back-from-process').addEventListener('click', () => showView('home'));
 document.getElementById('back-from-add').addEventListener('click', () => showView('home'));
@@ -522,7 +524,7 @@ const HOWTO_TOOLS = [
   { title: 'Browse proposal database', desc: 'Browse and filter every proposal and related document in the full index by client, year, device type, therapeutic area, study type and deal size. Titles open the document in your browser. Tags are automatic and may be wrong.', jump: 'browseDb', jumpLabel: 'Go to Browse proposal database' },
   { title: 'Add or correct a proposal in the database', desc: "The database is built from the shared Proposals folder and updated by the weekly scan. Use this to get a missing file added before the next scan, or to correct the tags on an existing entry. It prepares a request for the person who maintains the index.", jump: 'addProposal', jumpLabel: 'Go to Add proposal to database' },
   { title: 'Record a proposal outcome', desc: "Tell us whether a sent proposal was won, lost or went quiet, with the reason and final price. Proposals with a signed copy already count as won. Recorded outcomes show in Browse proposal database and help the drafting skill and the weekly report. It prepares a request for the person who maintains the index.", jump: 'outcome', jumpLabel: 'Go to Record a proposal outcome' },
-  { title: 'Proposal status & team schedule', desc: "See everyone's proposal due dates and SME review status in one place, in list or calendar view, so work doesn't get piled onto one person and nothing gets missed.", jump: 'schedule', jumpLabel: 'Go to Proposal status & team schedule' },
+  { title: 'Proposal status & team schedule', desc: "See everyone's proposal due dates and SME review status in one place, in list or calendar view, so work doesn't get piled onto one person and nothing gets missed. Add a proposal when you start drafting, press Mark as sent when it goes out (this schedules the client follow-up), and check the \"This week at a glance\" box for overdue items, items due in 7 days, follow-ups owed and items nobody has updated.", jump: 'schedule', jumpLabel: 'Go to Proposal status & team schedule' },
   { title: 'Master Rate Card', desc: "Check the current rates the Study Pricing Calculator (demo rates) uses (USD), plus the role rate card.", jump: 'rateCard', jumpLabel: 'Go to Master Rate Card' },
 ];
 function renderHowtoStep(step) {
@@ -1159,6 +1161,7 @@ function renderScheduleAccountBox() {
   });
 }
 function renderScheduleBoard() {
+  renderScheduleDigest();
   const boardBox = document.getElementById('schedule-board');
   if (!scheduleData.entries.length) {
     boardBox.innerHTML = '<p class="login-desc" style="margin:0;">No schedule items yet - add one below to get started.</p>';
@@ -1222,6 +1225,7 @@ function renderMyScheduleEntries() {
           <div class="result-title">${redactEscapeHtml(entry.proposalTitle)}</div>
           <div class="result-meta">${redactEscapeHtml(entry.taskType)} &middot; Due ${redactEscapeHtml(entry.dueDate)} &middot; ${redactEscapeHtml(entry.status)}</div>
           <div style="margin-top:8px; display:flex; gap:8px;">
+            ${entry.taskType === 'Drafting' && entry.status !== 'Complete' ? `<button type="button" class="quiz-option-btn schedule-sent-btn" data-id="${redactEscapeHtml(entry.id)}">Mark as sent</button>` : ''}
             <button type="button" class="quiz-option-btn schedule-edit-btn" data-id="${redactEscapeHtml(entry.id)}">Edit</button>
             <button type="button" class="quiz-option-btn schedule-delete-btn" data-id="${redactEscapeHtml(entry.id)}">Delete</button>
           </div>
@@ -1229,6 +1233,9 @@ function renderMyScheduleEntries() {
       `
     )
     .join('');
+  box.querySelectorAll('.schedule-sent-btn').forEach((btn) => {
+    btn.addEventListener('click', () => markScheduleEntrySent(btn.dataset.id));
+  });
   box.querySelectorAll('.schedule-edit-btn').forEach((btn) => {
     btn.addEventListener('click', () => startEditScheduleEntry(btn.dataset.id));
   });
@@ -1356,6 +1363,138 @@ document.getElementById('schedule-entry-form').addEventListener('submit', async 
     setScheduleSyncNote('Could not save that item: ' + err.message);
   }
 });
+// --- Schedule integration: hand-off from drafting pages, mark-as-sent follow-ups, weekly digest, home nudge ---
+function scheduleAddDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+// Opens the "Edit my schedule" form with a few fields filled in. Called from
+// the RFQ and draft pages (the RFQ page is inside an iframe and reaches this
+// through window.parent). If the person has no schedule account yet, the
+// schedule page opens on the account form instead.
+async function openScheduleWithPrefill(prefill) {
+  prefill = prefill || {};
+  await openScheduleTool();
+  if (!scheduleAccount) { showView('schedule'); return; }
+  showView('scheduleEdit');
+  resetScheduleForm();
+  document.getElementById('schedule-taskType').value = prefill.taskType || 'Drafting';
+  document.getElementById('schedule-status').value = prefill.status || 'Not started';
+  if (prefill.title) document.getElementById('schedule-proposalTitle').value = prefill.title;
+  if (prefill.ref) document.getElementById('schedule-proposalRef').value = prefill.ref;
+  if (prefill.dueDate) document.getElementById('schedule-dueDate').value = prefill.dueDate;
+  if (prefill.notes) document.getElementById('schedule-notes').value = prefill.notes;
+  const t = document.getElementById('schedule-proposalTitle');
+  if (t && t.focus) t.focus();
+}
+window.openScheduleWithPrefill = openScheduleWithPrefill;
+// Marks a Drafting item as sent: completes it and creates a Client Follow-up
+// item due a week later, so a sent proposal is not forgotten.
+async function markScheduleEntrySent(id) {
+  const entry = scheduleData.entries.find((e) => e.id === id);
+  if (!entry || !scheduleAccount) return;
+  const followDue = scheduleAddDays(scheduleTodayStr(), 7);
+  const dup = scheduleData.entries.some((e) =>
+    e.taskType === 'Client Follow-up' && e.status !== 'Complete' &&
+    e.ownerEmail.toLowerCase() === scheduleAccount.email.toLowerCase() &&
+    e.proposalTitle === entry.proposalTitle);
+  if (!window.confirm('Mark "' + entry.proposalTitle + '" as sent?' + (dup ? '' : ' This adds a client follow-up to your schedule for ' + followDue + '.'))) return;
+  try {
+    const { id: _omit, ...rest } = entry;
+    await saveScheduleEntry({ ...rest, status: 'Complete' }, id);
+    if (!dup) {
+      await saveScheduleEntry({
+        ownerEmail: scheduleAccount.email,
+        ownerName: scheduleAccount.name,
+        ownerRole: scheduleAccount.role,
+        proposalTitle: entry.proposalTitle,
+        proposalRef: entry.proposalRef || '',
+        taskType: 'Client Follow-up',
+        dueDate: followDue,
+        status: 'Not started',
+        notes: 'Follow up with the client after sending. When you hear back, use Record a proposal outcome on the home page.',
+      });
+    }
+  } catch (err) {
+    setScheduleSyncNote('Could not mark that item as sent: ' + err.message);
+  }
+}
+const SCHEDULE_STALE_DAYS = 7;
+// Sorts entries into the weekly-digest groups. Each open item lands in one group.
+function scheduleDigestGroups(entries, today) {
+  const g = { overdue: [], week: [], followups: [], stale: [] };
+  entries.forEach((e) => {
+    if (e.status === 'Complete') return;
+    const days = scheduleDaysUntil(e.dueDate);
+    if (e.taskType === 'Client Follow-up') { g.followups.push(e); return; }
+    if (days < 0) { g.overdue.push(e); return; }
+    if (days <= 7) { g.week.push(e); return; }
+    const upd = e.updatedAt ? Math.floor((new Date(today + 'T00:00:00Z') - new Date(e.updatedAt)) / 86400000) : 0;
+    if (upd >= SCHEDULE_STALE_DAYS) g.stale.push(e);
+  });
+  const byDue = (a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0);
+  Object.values(g).forEach((list) => list.sort(byDue));
+  return g;
+}
+function renderScheduleDigest() {
+  const box = document.getElementById('schedule-digest');
+  if (!box) return;
+  if (!scheduleAccount) { box.innerHTML = ''; return; }
+  const g = scheduleDigestGroups(scheduleData.entries, scheduleTodayStr());
+  const mine = (e) => e.ownerEmail.toLowerCase() === scheduleAccount.email.toLowerCase();
+  const line = (e) => {
+    const d = scheduleDaysUntil(e.dueDate);
+    const when = d < 0 ? Math.abs(d) + ' day' + (Math.abs(d) === 1 ? '' : 's') + ' overdue' : d === 0 ? 'due today' : 'due ' + e.dueDate;
+    return '<li' + (mine(e) ? ' style="font-weight:600;"' : '') + '>' + redactEscapeHtml(e.proposalTitle) +
+      ' <span style="color:var(--text-muted);font-weight:400;">&middot; ' + redactEscapeHtml(e.taskType) + ' &middot; ' +
+      redactEscapeHtml(e.ownerName || '') + ' &middot; ' + when + '</span></li>';
+  };
+  const sec = (title, list, note) => list.length
+    ? '<div style="margin-bottom:12px;"><h3 style="margin:0 0 4px;">' + title + ' (' + list.length + ')</h3>' +
+      (note ? '<div class="login-desc" style="margin:0 0 4px;">' + note + '</div>' : '') +
+      '<ul style="margin:0;padding-left:20px;">' + list.map(line).join('') + '</ul></div>'
+    : '';
+  const html =
+    sec('Overdue', g.overdue, 'Past the due date and not complete.') +
+    sec('Due in the next 7 days', g.week) +
+    sec('Client follow-ups owed', g.followups, 'Proposals sent and waiting on the client. Record the outcome when you hear back.') +
+    sec('No update in ' + SCHEDULE_STALE_DAYS + '+ days', g.stale, 'Due later, but nobody has touched these recently. Is the date still right?');
+  box.innerHTML = '<div class="result-card" style="margin-top:16px;"><div class="result-title">This week at a glance</div>' +
+    '<div class="login-desc" style="margin:4px 0 10px;">Your own items are in bold.</div>' +
+    (html || '<div class="login-desc" style="margin:0;">Nothing is overdue, due this week, or waiting on a follow-up.</div>') + '</div>';
+}
+// Home-page nudge: a one-line count of YOUR overdue / due-soon items.
+let homeNudgeAt = 0;
+function refreshHomeScheduleNudge() {
+  const el = document.getElementById('home-schedule-nudge');
+  if (!el) return;
+  const email = (typeof getSiteLoginEmail === 'function' ? getSiteLoginEmail() : '').toLowerCase();
+  if (!email || Date.now() - homeNudgeAt < 30000) return;
+  homeNudgeAt = Date.now();
+  let done = false;
+  let unsub = null;
+  const finish = (snap) => {
+    if (done) return;
+    done = true;
+    if (unsub) unsub();
+    const mine = snap.docs.map((d) => d.data()).filter((e) => (e.ownerEmail || '').toLowerCase() === email && e.status !== 'Complete');
+    const over = mine.filter((e) => scheduleDaysUntil(e.dueDate) < 0).length;
+    const soon = mine.filter((e) => { const d = scheduleDaysUntil(e.dueDate); return d >= 0 && d <= 7; }).length;
+    const parts = [];
+    if (over) parts.push(over + ' overdue');
+    if (soon) parts.push(soon + ' due in the next 7 days');
+    if (!parts.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = 'Your schedule: ' + parts.join(', ') + '. <a href="#" id="home-schedule-link">Open the schedule</a>';
+    document.getElementById('home-schedule-link').addEventListener('click', (ev) => { ev.preventDefault(); openScheduleTool(); showView('schedule'); });
+  };
+  try {
+    unsub = scheduleDb.collection('scheduleEntries').onSnapshot(finish, () => {});
+    if (done && unsub) unsub();
+  } catch (err) { /* the nudge is optional */ }
+}
+
 // --- Proposal status & team schedule: calendar view ---
 let scheduleViewMode = 'list';
 let scheduleCalRange = 'month'; // 'week' | 'month' | 'year'
