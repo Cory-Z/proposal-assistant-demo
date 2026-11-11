@@ -10,6 +10,8 @@ Proposals for regulated-industry studies were slow and inconsistent. Scoping det
 
 ## What I built
 
+**An RFQ starter.** The front of the process is a new client request (RFQ). A "Start from an RFQ" page builds a request for an AI skill, which replies with a short summary of the RFQ, a pre-filled first intake form, the questions to ask the client (each with the assumption the firm will use if they do not answer), and a draft email. The pre-fill comes back as one line of structured data that the intake form imports, marks, and asks the person to check. The demo includes a sample reply for a made-up RFQ so you can try that hand-off.
+
 **A two-step intake.** An SME intake form captures study scope and design (user groups, session lengths, deliverables). A commercial intake form imports that output, checks it, and adds pricing inputs, staffing and project management. Each form ends with a copy-and-paste block of structured data, so nothing has to be retyped between steps.
 
 **A pricing calculator** that follows the firm's estimating method: study days from participants and session length, facility and recruitment costs, tiered pass-through fees, report effort, markup and rounding rules. The same engine is embedded in the intake forms and in the skill that drafts the proposal, so the number a person sees is the number that ends up in the document. (All rates and hours in this demo are invented.)
@@ -28,7 +30,7 @@ Proposals for regulated-industry studies were slow and inconsistent. Scoping det
 
 The site is the front door; three Claude skills do the heavy lifting in the original (they are not part of this repository):
 
-1. **Draft skill.** Takes the structured intake output, decodes the pricing data, runs the same calculator code, pulls the closest past proposals from the index as references, and builds a first-pass Word SOW or PowerPoint deck from the firm's templates. It finishes with a review list of everything a human should check (assumptions, terminology, pricing, anything it could not verify).
+1. **Draft skill.** Starts from a new RFQ (summary, intake pre-fill, client questions and email), then takes the structured intake output, decodes the pricing data, runs the same calculator code, pulls the closest past proposals from the index as references, and builds a first-pass Word SOW or PowerPoint deck from the firm's templates. It finishes with a review list of everything a human should check (assumptions, terminology, pricing, anything it could not verify).
 2. **Search skill.** Reads the proposal index and answers questions such as "list proposals for this device type" or "find the closest past proposals to this request", returning links.
 3. **Index maintenance skill.** Runs weekly to find new or changed documents, tag them, and refresh the index, with a short report of what changed.
 
