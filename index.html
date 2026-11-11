@@ -359,7 +359,10 @@
       <label>Anything useful to remember (optional)
         <textarea name="note" rows="3" placeholder="For example: client said our timeline was too long; they went with a competitor who offered a two-week start."></textarea>
       </label>
-      <button type="submit" class="primary-btn">Prepare request</button>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="primary-btn">Prepare request</button>
+        <button type="reset" class="quiz-option-btn" id="outcome-reset">Clear form</button>
+      </div>
     </form>
     <div id="outcome-output" class="output" hidden></div>
   </section>
