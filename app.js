@@ -53,6 +53,7 @@ const views = {
   process: document.getElementById('view-process'),
   tool: document.getElementById('view-tool'),
   addProposal: document.getElementById('view-add-proposal'),
+  outcome: document.getElementById('view-outcome'),
   browseDb: document.getElementById('view-browse-db'),
   redact: document.getElementById('view-redact'),
   schedule: document.getElementById('view-schedule'),
@@ -119,6 +120,8 @@ document.getElementById('header-home-link').addEventListener('keydown', (e) => {
 document.getElementById('btn-draft').addEventListener('click', () => showView('draft'));
 document.getElementById('btn-search').addEventListener('click', () => showView('search'));
 document.getElementById('btn-add-proposal').addEventListener('click', () => showView('addProposal'));
+document.getElementById('btn-outcome').addEventListener('click', () => { loadBrowseData().then(() => { renderOutcomeMatches(); showView('outcome'); }); });
+document.getElementById('back-from-outcome').addEventListener('click', () => showView('home'));
 document.getElementById('btn-browse-db').addEventListener('click', () => { renderBrowseList(); showView('browseDb'); });
 function openTool(file, title) {
   const f = document.getElementById('tool-frame');
@@ -255,6 +258,7 @@ document.getElementById('broaden-search-btn').addEventListener('click', () => {
 // repository is private. Until the file exists, this view shows a "not published yet" message.
 let browseAll = null;       // null = not loaded yet, [] = missing/empty
 let browseShown = 100;
+const outcomeLabel = e => e.outcome ? (e.outcomeAuto ? 'Won (signed copy on file)' : e.outcome + (e.outcomeReason ? ': ' + e.outcomeReason : '')) : 'Unknown';
 const BROWSE_FILTERS = [
   ['browse-filter-year', e => { const y = (e.date || '').slice(0, 4); return /^\d{4}$/.test(y) ? y : (/^unkn/i.test(y) ? 'Unknown' : 'Undated'); }, v => true],
   ['browse-filter-kind', e => [e.kind], v => true],
@@ -262,6 +266,7 @@ const BROWSE_FILTERS = [
   ['browse-filter-area', e => e.area, v => true],
   ['browse-filter-study', e => e.study, v => true],
   ['browse-filter-dealsize', e => [e.dealSizeBandGroup], v => true],
+  ['browse-filter-outcome', e => [e.outcome ? (e.outcomeAuto ? 'Won (signed copy on file)' : e.outcome) : 'Unknown'], v => true],
 ];
 function browseEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function loadBrowseData() {
@@ -297,9 +302,9 @@ function browseCsvCell(v) { const t = String(v == null ? '' : v).replace(/"/g, '
 function exportBrowseCsv() {
   if (!browseAll || !browseAll.length) return;
   const rows = getBrowseSorted();
-  const head = ['ID', 'Title', 'Client', 'Date', 'Kind', 'Version status', 'Device type', 'Therapeutic area', 'Study type', 'Pricing model', 'Deal size', 'Link'];
+  const head = ['ID', 'Title', 'Client', 'Date', 'Kind', 'Version status', 'Device type', 'Therapeutic area', 'Study type', 'Pricing model', 'Deal size', 'Outcome', 'Link'];
   const lines = [head.map(browseCsvCell).join(',')].concat(rows.map(e => [e.id, e.title, e.clientName, e.date, e.kind, e.versionStatus,
-    e.device.join('; '), e.area.join('; '), e.study.join('; '), e.pricingModel, e.dealSizeBand, e.url].map(browseCsvCell).join(',')));
+    e.device.join('; '), e.area.join('; '), e.study.join('; '), e.pricingModel, e.dealSizeBand, outcomeLabel(e), e.url].map(browseCsvCell).join(',')));
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -341,16 +346,17 @@ function renderBrowseList() {
         <div class="result-meta">${browseEsc([e.device.join('; '), e.area.join('; '), e.study.join('; ')].filter(Boolean).join(' | '))}</div>
         <div class="result-meta">${browseEsc(e.pricingModel || '')}${e.dealSizeBand ? ' &middot; ' + browseEsc(e.dealSizeBand) : ''}${e.structure.length ? ' &middot; ' + browseEsc(e.structure.join('; ')) : ''}</div>
         <div class="result-meta" style="margin-top:6px;">${browseEsc(e.summary)}</div>
+        <div class="result-meta">Outcome: ${browseEsc(outcomeLabel(e))}</div>
         <div class="result-meta">Reference: ${browseEsc(e.id)}${(e.signedUrls || []).map(u => ' &middot; ' + link(u) + 'signed/final copy</a>').join('')}</div>
       </div>`;
     }).join('') + (f.length > browseShown ? `<button type="button" class="quiz-option-btn" id="browse-more" style="margin-top:12px;">Show more</button>` : '');
   });
 }
-['browse-filter-year', 'browse-filter-kind', 'browse-filter-device', 'browse-filter-area', 'browse-filter-study', 'browse-filter-dealsize', 'browse-all-versions', 'browse-sort']
+['browse-filter-year', 'browse-filter-kind', 'browse-filter-device', 'browse-filter-area', 'browse-filter-study', 'browse-filter-dealsize', 'browse-filter-outcome', 'browse-all-versions', 'browse-sort']
   .forEach(id => document.getElementById(id).addEventListener('change', () => { browseShown = 100; renderBrowseList(); }));
 document.getElementById('browse-text').addEventListener('input', () => { browseShown = 100; renderBrowseList(); });
 document.getElementById('browse-filter-clear').addEventListener('click', () => {
-  ['browse-filter-year', 'browse-filter-kind', 'browse-filter-device', 'browse-filter-area', 'browse-filter-study', 'browse-filter-dealsize'].forEach(id => { document.getElementById(id).value = ''; });
+  ['browse-filter-year', 'browse-filter-kind', 'browse-filter-device', 'browse-filter-area', 'browse-filter-study', 'browse-filter-dealsize', 'browse-filter-outcome'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('browse-text').value = '';
   document.getElementById('browse-all-versions').checked = false;
   browseShown = 100;
@@ -515,6 +521,7 @@ const HOWTO_TOOLS = [
   { title: 'Ballpark quote builder', desc: 'Low and high price ranges from a few inputs, formatted for email.', jump: 'tool:tool-ballpark.html', jumpLabel: 'Go to Ballpark quote builder' },
   { title: 'Browse proposal database', desc: 'Browse and filter every proposal and related document in the full index by client, year, device type, therapeutic area, study type and deal size. Titles open the document in your browser. Tags are automatic and may be wrong.', jump: 'browseDb', jumpLabel: 'Go to Browse proposal database' },
   { title: 'Add or correct a proposal in the database', desc: "The database is built from the shared Proposals folder and updated by the weekly scan. Use this to get a missing file added before the next scan, or to correct the tags on an existing entry. It prepares a request for the person who maintains the index.", jump: 'addProposal', jumpLabel: 'Go to Add proposal to database' },
+  { title: 'Record a proposal outcome', desc: "Tell us whether a sent proposal was won, lost or went quiet, with the reason and final price. Proposals with a signed copy already count as won. Recorded outcomes show in Browse proposal database and help the drafting skill and the weekly report. It prepares a request for the person who maintains the index.", jump: 'outcome', jumpLabel: 'Go to Record a proposal outcome' },
   { title: 'Proposal status & team schedule', desc: "See everyone's proposal due dates and SME review status in one place, in list or calendar view, so work doesn't get piled onto one person and nothing gets missed.", jump: 'schedule', jumpLabel: 'Go to Proposal status & team schedule' },
   { title: 'Master Rate Card', desc: "Check the current rates the Study Pricing Calculator (demo rates) uses (USD), plus the role rate card.", jump: 'rateCard', jumpLabel: 'Go to Master Rate Card' },
 ];
@@ -594,6 +601,49 @@ Follow the skill's "Single additions and corrections" procedure: confirm the fil
   outputBox.innerHTML = `
     <p style="margin:0 0 10px;">${copied ? 'Request copied to your clipboard.' : 'Could not copy automatically - select and copy the text below.'} If you maintain the proposal index, start a Cowork session and paste it in. Otherwise send it to the index owner (Cory, demo@example.com). The index changes only when this request is run, and the site shows the change after the updated index file is uploaded.</p>
     <pre style="white-space:pre-wrap;font-family:inherit;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin:0;">${safe}</pre>
+  `;
+});
+// --- Record a proposal outcome (prepares a request for the index maintainer; nothing is sent from the page) ---
+function renderOutcomeMatches() {
+  const sel = document.getElementById('outcome-pick');
+  const q = document.getElementById('outcome-find').value.trim().toLowerCase();
+  const words = q ? q.split(/\s+/) : [];
+  const pool = (browseAll || []).filter(e => e.current && /proposal|estimate|quote/i.test(e.kind || ''));
+  if (!pool.length) { sel.innerHTML = '<option value="">The proposal database is not loaded, so type the reference number in the note instead</option>'; return; }
+  const hits = (words.length ? pool.filter(e => { const b = [e.title, e.clientName, e.id].join(' ').toLowerCase(); return words.every(w => b.includes(w)); }) : pool.slice().sort((x, y) => String(y.date).localeCompare(String(x.date)))).slice(0, 40);
+  sel.innerHTML = hits.length
+    ? hits.map(e => `<option value="${browseEsc(e.id)}" data-title="${browseEsc(e.title)}">${browseEsc((e.clientName || '') + ' | ' + (e.date || '') + ' | ' + e.title)}${e.outcome ? ' [' + browseEsc(outcomeLabel(e)) + ']' : ''}</option>`).join('')
+    : '<option value="">No match: try fewer words or the reference number</option>';
+}
+document.getElementById('outcome-find').addEventListener('input', renderOutcomeMatches);
+document.getElementById('outcome-result').addEventListener('change', (e) => {
+  document.getElementById('outcome-reason-row').hidden = !['Lost', 'No response', 'Withdrawn by client'].includes(e.target.value);
+});
+document.getElementById('outcome-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const g = k => (f.get(k) || '').toString().trim();
+  if (!g('id')) { alert('Pick the proposal from the list first.'); return; }
+  const opt = document.querySelector('#outcome-pick option:checked');
+  const rec = { id: g('id'), outcome: g('outcome') };
+  if (g('reason')) rec.reason = g('reason');
+  if (g('finalPrice')) rec.finalPrice = g('finalPrice');
+  if (g('decisionDate')) rec.decisionDate = g('decisionDate');
+  if (g('note')) rec.note = g('note');
+  const email = (typeof getSiteLoginEmail === 'function' && getSiteLoginEmail()) || '';
+  if (email) rec.recordedBy = email;
+  const prompt = `Please use the proposal-index-organizer skill to record one proposal outcome in Acme HF's proposal index.
+Run this in a Cowork session. First, immediately request access to the folder C:\\Users\\<my user name>\\Acme HF\\Proposal Process Project - Proposal Index (do not ask me whether it is synced).
+Proposal: ${opt ? opt.dataset.title : g('id')}
+Follow the skill's "Recording outcomes" procedure: run Tools/organizer/record_outcome.py with the line below, confirm what was recorded, rebuild Tools/site/internal-index.json, and tell me which files to re-upload to the site.
+OUTCOME-DATA: ${JSON.stringify(rec)}`;
+  const outputBox = document.getElementById('outcome-output');
+  outputBox.hidden = false;
+  let copied = false;
+  try { await navigator.clipboard.writeText(prompt); copied = true; } catch (err) { copied = false; }
+  outputBox.innerHTML = `
+    <p style="margin:0 0 10px;">${copied ? 'Request copied to your clipboard.' : 'Could not copy automatically - select and copy the text below.'} If you maintain the proposal index, start a Cowork session and paste it in. Otherwise send it to the person who does.</p>
+    <pre style="white-space:pre-wrap;font-family:inherit;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin:0;">${redactEscapeHtml(prompt)}</pre>
   `;
 });
 // --- De-identify an RFQ (entirely client-side - nothing here is sent anywhere) ---
