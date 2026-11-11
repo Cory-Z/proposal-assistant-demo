@@ -59,7 +59,7 @@ details summary{cursor:pointer;color:var(--purple);font-weight:600}
   </div>
   <div id="grpBox" style="display:grid;gap:8px">
     <span class="lab">User groups</span>
-    <div class="tbl"><table class="gt"><thead><tr><th>Participant type</th><th>Participants needed</th><th>Session length (hrs)</th><th></th></tr></thead><tbody id="grows"></tbody></table></div>
+    <div class="tbl"><table class="gt"><thead><tr><th>Participant type</th><th>Participants needed</th><th>Up to (optional)</th><th>Session length (hrs)</th><th></th></tr></thead><tbody id="grows"></tbody></table></div>
     <div><button class="btn ghost" id="addg" type="button">Add user group</button></div>
   </div>
   <div style="display:grid;gap:8px"><span class="lab">Other deliverables (range = small to large scope)</span><div class="chips" id="dlv"></div></div>
@@ -71,7 +71,7 @@ details summary{cursor:pointer;color:var(--purple);font-weight:600}
   <span class="status" id="msg" aria-live="polite"></span>
   <div class="out" id="out"></div>
   <details><summary>How the range is built</summary>
-    <p class="lede" style="font-size:.9rem">Low: solid client screener draft, standard protocol complexity, no prep buffer, 15-minute breaks, facilitator 6 hrs/day, few critical tasks and use errors. High: poor or no screener draft, moderately complex protocol (&#xd7;1.25), 10% prep buffer, 30-minute breaks, facilitator 8 hrs/day, many critical tasks and a standard number of use errors needing root cause analysis. Other deliverables run from the small to the large scope tier. Project management is 15% of consulting fees (minimum $4,000). Recruitment and incentive rates by participant type: patients/lay users $120 / $60, nurses/HCPs $200 / $80, physicians/surgeons $400 / $320. Ranges are rounded out to the nearest $800.</p>
+    <p class="lede" style="font-size:.9rem">Low: solid client screener draft, standard protocol complexity, no prep buffer, 15-minute breaks, facilitator 6 hrs/day, few critical tasks and use errors. High: poor or no screener draft, moderately complex protocol (&#xd7;1.25), 10% prep buffer, 30-minute breaks, facilitator 8 hrs/day, many critical tasks and a standard number of use errors needing root cause analysis. If you enter an "Up to" number for a user group, the low end uses the lower participant count and the high end uses the higher one, so the range also reflects how many participants are needed. Other deliverables run from the small to the large scope tier. Project management is 15% of consulting fees (minimum $4,000). Recruitment and incentive rates by participant type: patients/lay users $120 / $60, nurses/HCPs $200 / $80, physicians/surgeons $400 / $320. Ranges are rounded out to the nearest $800.</p>
   </details>
 </section>
 </div>
@@ -225,13 +225,15 @@ const k$ = v => "$" + Math.round(v).toLocaleString("en-US");
 const lo = v => Math.floor(v / 1000) * 1000, hi = v => Math.ceil(v / 1000) * 1000;
 const rng = (a, b) => a === b ? k$(lo(a)) : `${k$(lo(a))} \u2013 ${k$(hi(b))}`;
 function save(){ try { localStorage.setItem(KEY2, JSON.stringify({G, SEL:[...SEL], SENDER, study:byId("study").value, site:byId("site").value, rec:byId("rec").value, pilot:byId("pilot").value, irb:byId("irb").value})); } catch (e) {} }
+const nFor = (g, high) => high && +g.nMax > +g.n ? +g.nMax : +g.n;
+const nTxt = g => +g.nMax > +g.n ? `${g.n}\u2013${g.nMax}` : `${g.n}`;
 function runCalc(high){
   S = structuredClone(EXAMPLE); RT = {...RATES_DEFAULT}; RPR = structuredClone(RPR_DEFAULT); TIER = structuredClone(TIER_DEFAULT);
   const clientRec = byId("rec").value === "Client";
   Object.assign(S, {studyType: byId("study").value, breakMin: high ? 30 : 15, scrDraft: high ? "Poor or no client draft" : "Solid client draft", protoCx: high ? 1.25 : 1, buffer: high ? 10 : 0,
     facHrs: high ? 8 : 6, rpCrit: high ? "Many" : "Few", rpUE: high ? "Standard" : "Few", irb: byId("irb").value, studySite: byId("site").value, pilot: byId("pilot").value, pilotUpdHrs: 2,
     initFee: clientRec ? 0 : 2400, misc: high ? 1600 : 800, camera: 1, travDays: 0, travTime: 0, pmPct: 15});
-  S.groups = G.filter(g => +g.n > 0).map(g => { const r = TYPES[g.t] || TYPES["Patients / lay users"]; return {name: g.t, n: +g.n, sh: +g.sh || 1, distinct: "Yes", rr: clientRec ? 0 : r.rr, it: clientRec ? 0 : r.it, tr: clientRec ? 0 : (high ? r.tr : 0), sun: "No", ppd: ""}; });
+  S.groups = G.filter(g => +g.n > 0).map(g => { const r = TYPES[g.t] || TYPES["Patients / lay users"]; return {name: g.t, n: nFor(g, high), sh: +g.sh || 1, distinct: "Yes", rr: clientRec ? 0 : r.rr, it: clientRec ? 0 : r.it, tr: clientRec ? 0 : (high ? r.tr : 0), sun: "No", ppd: ""}; });
   S.pilotGroups = S.groups.map(g => ({name: g.name, n: S.pilot === "Yes" ? 1 : "", sh: g.sh, rr: g.rr, it: g.it, tr: g.tr, sun: "No", ppd: ""}));
   return compute();
 }
@@ -242,7 +244,7 @@ function build(){
   if (studyOn){
     r0 = runCalc(false); r1 = runCalc(true);
     const b = (r, keys) => keys.reduce((a, k) => a + (r.L[k] || 0), 0);
-    const pax = r1.pax, days0 = r0.calDays, days1 = r1.calDays, gtxt = G.filter(g => +g.n > 0).map(g => `${g.n} ${g.t.split(" /")[0].toLowerCase()}`).join(", ");
+    const pax = r1.pax, days0 = r0.calDays, days1 = r1.calDays, gtxt = G.filter(g => +g.n > 0).map(g => `${nTxt(g)} ${g.t.split(" /")[0].toLowerCase()}`).join(", ");
     const add = (name, note, a, z, cons) => { rows.push({name, note, a, z}); totL += a; totH += z; if (cons){ consL += a; consH += z; } };
     add("Study Preparation", "consultant onboarding, protocol, recruitment screeners, discussion guide, data collection sheets, plan study schedule", b(r0,["onb","hf","scr","irb","prep"]), b(r1,["onb","hf","scr","irb","prep"]), true);
     if (r1.rec > 0) add("Participant Recruitment", `recruitment start-up and per-recruit costs for up to ${pax} participants (${gtxt} needed, plus 20% over-recruit)`, r0.rec, r1.rec, false);
@@ -284,6 +286,7 @@ let RES = null;
 function renderGroups(){
   byId("grows").innerHTML = G.map((g, i) => `<tr><td><select aria-label="Participant type" data-g="${i}" data-f="t">${Object.keys(TYPES).map(t => `<option ${t === g.t ? "selected" : ""}>${t}</option>`).join("")}</select></td>
     <td><input type="number" min="0" aria-label="Participants needed" data-g="${i}" data-f="n" value="${esc(g.n)}"></td>
+    <td><input type="number" min="0" placeholder="same" aria-label="Up to this many participants (optional, makes the range depend on participant count)" data-g="${i}" data-f="nMax" value="${esc(g.nMax || "")}"></td>
     <td>${(g._c || !["0.5","1","1.5","2","2.5","3","3.5","4"].includes(String(g.sh))) ? `<span style="display:flex;gap:4px;align-items:center"><input type="number" min="0.25" step="0.25" style="width:80px" aria-label="Session length (type hours)" data-g="${i}" data-f="sh" value="${esc(g.sh)}"><button class="x" type="button" data-glist="${i}" title="Back to the list" aria-label="Back to the list" style="font-size:.8rem">&#x25be; List</button></span>` : `<select aria-label="Session length" data-g="${i}" data-f="sh">${["0.5","1","1.5","2","2.5","3","3.5","4"].map(v => `<option ${String(g.sh) === v ? "selected" : ""}>${v}</option>`).join("")}<option value="__other">Other (type hours)&hellip;</option></select>`}</td>
     <td><button class="x" type="button" data-del="${i}" aria-label="Remove group">&#x2715;</button></td></tr>`).join("");
 }
@@ -301,7 +304,7 @@ document.addEventListener("change", e => { const t = e.target;
   render(); });
 document.addEventListener("input", e => { if (e.target.id === "sender"){ SENDER = e.target.value; RES = build(); byId("out").innerHTML = RES.rows.length ? tableHTML(RES) : byId("out").innerHTML; save(); } });
 document.addEventListener("click", e => {
-  if (e.target.id === "addg"){ G.push({t:"Patients / lay users", n:8, sh:"1"}); renderGroups(); render(); }
+  if (e.target.id === "addg"){ G.push({t:"Patients / lay users", n:8, nMax:"", sh:"1"}); renderGroups(); render(); }
   const gl = e.target.closest("[data-glist]"); if (gl){ const g = G[+gl.dataset.glist]; g._c = false; if (!["0.5","1","1.5","2","2.5","3","3.5","4"].includes(String(g.sh))) g.sh = "1"; renderGroups(); render(); return; }
   const d = e.target.closest("[data-del]"); if (d){ G.splice(+d.dataset.del, 1); renderGroups(); render(); }
 });
