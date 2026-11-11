@@ -22,6 +22,8 @@ Proposals for regulated-industry studies were slow and inconsistent. Scoping det
 
 **A searchable proposal database.** The site loads an index of past proposals, SOWs, amendments and client requests with tags (device type, therapeutic area, study type, structure, deal size). You can browse and filter it, search it by free text, and generate a prompt that asks the AI search skill to go deeper, including slide-level text. The demo ships with 60-odd invented entries.
 
+**Outcome tracking.** Every proposal in the database can carry an outcome (won, lost, no response) with a reason and final price. A proposal with a signed copy counts as won automatically; a short form prepares the request that records any other result. The database can be filtered by outcome, and the AI skills show outcomes next to every similar proposal they cite. Win rates are only reported once enough decisions are recorded, so an incomplete record cannot make the numbers look better than they are.
+
 **A team schedule** showing proposal due dates and review status in list and calendar views. In the original it synced live through a hosted database; in this demo a small in-browser stand-in keeps the same calls working.
 
 **A de-identification helper** that scans pasted request text for likely client names and sensitive phrases before anything is sent to an AI tool. It runs entirely client-side.
