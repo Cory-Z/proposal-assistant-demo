@@ -127,6 +127,12 @@
         <span class="card-title">Add or correct a proposal</span>
         <span class="card-desc">Get a missing file added before the next weekly scan, or correct an entry's tags</span>
       </button>
+<button class="big-card" id="btn-outcome" type="button">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+        <span class="card-accent"></span>
+        <span class="card-title">Record a proposal outcome</span>
+        <span class="card-desc">Tell us whether a proposal was won, lost or went quiet, and why, so the team can learn from it</span>
+      </button>
 <button class="big-card" id="btn-howto" type="button">
   <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
   <span class="card-accent"></span>
@@ -285,6 +291,9 @@
       <label style="flex:1 1 150px; min-width:150px;">Deal size
         <select id="browse-filter-dealsize"><option value="">All</option></select>
       </label>
+      <label style="flex:1 1 150px; min-width:150px;">Outcome
+        <select id="browse-filter-outcome"><option value="">All</option></select>
+      </label>
       <label style="flex:1 1 150px; min-width:150px;">Sort by
         <select id="browse-sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="client">Client A to Z</option><option value="title">Title A to Z</option></select>
       </label>
@@ -307,6 +316,52 @@
       <button class="back-link" id="back-from-tool" type="button">&larr; Back</button>
     </div>
     <iframe id="tool-frame" title="Tool" allow="clipboard-write; clipboard-read" style="width:100%; height:calc(100vh - var(--header-h,86px) - 34px); border:none; display:block;"></iframe>
+  </section>
+  <section id="view-outcome" class="view" hidden>
+    <button class="back-link" id="back-from-outcome" type="button">&larr; Back</button>
+    <h1>Record a proposal outcome</h1>
+    <p class="login-desc">Wins, losses and no-responses are what let the team see which proposals work and where price or timing loses work. A proposal with a signed copy in the index already counts as won; everything else is unknown until someone records it here. This form prepares a request for the person who maintains the index. Nothing is sent from this page.</p>
+    <form id="outcome-form">
+      <label>Find the proposal (type a client, project or reference number)
+        <input type="text" id="outcome-find" placeholder="e.g. Acme autoinjector, or PRO-2026-123" autocomplete="off">
+      </label>
+      <label>Pick it from the matches
+        <select id="outcome-pick" name="id" required size="6"><option value="">Type above to see matches</option></select>
+      </label>
+      <label>Outcome
+        <select name="outcome" id="outcome-result" required>
+          <option value="">Choose</option>
+          <option>Won</option>
+          <option>Lost</option>
+          <option>No response</option>
+          <option>Withdrawn by client</option>
+          <option>Pending</option>
+        </select>
+      </label>
+      <label id="outcome-reason-row" hidden>Main reason
+        <select name="reason" id="outcome-reason">
+          <option value="">Not known</option>
+          <option>Price</option>
+          <option>Timing</option>
+          <option>Chose a competitor</option>
+          <option>Client project cancelled or paused</option>
+          <option>Client did the work in-house</option>
+          <option>Scope mismatch</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label>Final signed price, if won (optional, numbers only)
+        <input type="text" name="finalPrice" inputmode="decimal" placeholder="e.g. 148500">
+      </label>
+      <label>Decision date (optional, month is fine)
+        <input type="text" name="decisionDate" placeholder="e.g. 2026-10 or 2026-10-15">
+      </label>
+      <label>Anything useful to remember (optional)
+        <textarea name="note" rows="3" placeholder="For example: client said our timeline was too long; they went with a competitor who offered a two-week start."></textarea>
+      </label>
+      <button type="submit" class="primary-btn">Prepare request</button>
+    </form>
+    <div id="outcome-output" class="output" hidden></div>
   </section>
   <section id="view-add-proposal" class="view" hidden>
     <button class="back-link" id="back-from-add" type="button">&larr; Back</button>
