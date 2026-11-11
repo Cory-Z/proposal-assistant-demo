@@ -72,6 +72,8 @@ textarea{width:100%;min-height:150px;font:12px/1.45 var(--f-mono);background:var
 .vrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .smeval{font-size:.85rem;color:var(--muted)} .smeval b{color:var(--fg)}
 .import{display:grid;gap:8px}
+.rfqn{font-size:.84rem;color:#196972;background:#EFFAFB;border-left:3px solid #F4B782;padding:5px 9px;border-radius:4px;margin:6px 0}
+.rfqbox{border-color:#F4B782}
 .err{color:var(--opt-fg);font-size:.88rem}
 </style>
 <div class="wrap">
@@ -307,7 +309,7 @@ function badge(q){if(MODE==="sme")return q.o==="S"&&!q.optional?'<span class="ba
  return q.o==="C"?'<span class="badge b-co">Comm Ops \u00b7 required</span>':'<span class="badge b-opt">Verify SME input</span>'}
 function chipsHTML(q,v,assumed){return `<div class="chips">${q.opts.map(o=>`<button type="button" class="chip${assumed===o&&!filled(v)?" assumed":""}" data-q="${q.id}" data-v="${esc2(o)}" aria-pressed="${v===o}">${esc2(o)}</button>`).join("")}</div>`}
 function qHTML(q){
- const hint=q.h?`<div class="hint">${esc2(q.h)}</div>`:"";
+ const hint=(q.h?`<div class="hint">${esc2(q.h)}</div>`:"")+rfqNote(q.id);
  const lab=`<div class="lab" id="lab_${q.id}">${esc2(q.l)} ${badge(q)}</div>`;
  if(q.type==="groups")return MODE==="sme"?smeGroupsHTML(q):coGroupsHTML(q);
  if(q.type==="sizes"){const vf=(MODE==="co")?`<div class="chips"><button type="button" class="chip" data-ver="${q.id}" aria-pressed="${!!A.verified[q.id]}">\u2713 Verified</button></div>`:"";return sizesHTML(q,lab,hint,vf)}
@@ -327,7 +329,7 @@ function qHTML(q){
 const opt=(arr,v,ph)=>(ph?`<option value="">${ph}</option>`:"")+arr.map(o=>`<option value="${esc2(o)}"${String(v)===String(o)?" selected":""}>${esc2(o)}</option>`).join("");
 function smeGroupsHTML(q){
  const cols=SCHEMA.groupCols.filter(c=>c.o!=="C");const pilot=finalVal("pilot")==="Yes";
- return `<div class="q"><div class="lab">User groups <span class="badge b-req">Required</span></div><div class="hint">One row per intended user group. Required sessions = completed sessions needed; recruiting adds 20% automatically (15 \u2192 18). Session length = study session only; enter training and decay separately (0 if none).</div>
+ return `<div class="q"><div class="lab">User groups <span class="badge b-req">Required</span></div>${rfqNote("groups")}<div class="hint">One row per intended user group. Required sessions = completed sessions needed; recruiting adds 20% automatically (15 \u2192 18). Session length = study session only; enter training and decay separately (0 if none).</div>
  <div class="tbl"><table><thead><tr>${cols.filter(c=>gcShow(c,pilot)).map(c=>`<th>${esc2(c.l)}${c.o==="V"?" (optional)":""}</th>`).join("")}<th></th></tr></thead><tbody>${A.groups.map((g,i)=>`<tr>${cols.filter(c=>gcShow(c,pilot)).map(c=>{
   if(c.id==="other")return `<td><input type="text" data-g="${i}" data-f="other" value="${esc2(g.other)}" ${g.type==="Other"?"":"disabled"} placeholder="${g.type==="Other"?"Name":"\u2014"}" aria-label="Other name"></td>`;
   const val=c.id==="psh"?(g.psh||g.sh):g[c.id];
@@ -361,13 +363,38 @@ function coGroupsHTML(q){
   ${amtCell("cg",i,"ppd",c,"Sessions per day","","number",c.ppd||"Recommended")}
   <td><select data-cg="${i}" data-f="sun" aria-label="Sunshine Act">${opt(YN,sun)}</select></td></tr>`}).join("")}</tbody></table></div></div>`;
 }
+/* ---------- Start from an RFQ (SME form): imports the RFQ-PREFILL line made by Claude ---------- */
+let RFQ_MSG="";
+const rfqNote=id=>{const r=A&&A._rfq;if(!r||!(r.ids||[]).includes(id))return "";const n=(r.notes||{})[id];return `<div class="rfqn"><b>Pre-filled from the RFQ. Please check this answer.</b>${n?" RFQ: "+esc2(n):""}</div>`};
+function rfqHTML(){return `<section class="card rfqbox" id="sec_rfq"><h2><span class="num">★</span>Start from an RFQ (optional)<span class="state${A._rfq?" done":""}">${A._rfq?"Filled":"Optional"}</span></h2><div class="qs import">
+ <div class="hint">Have a new RFQ? On the site's <b>Start from an RFQ</b> page, build a request for Claude. Claude replies with a line that starts with <b>RFQ-PREFILL</b>. Paste that line here and click Fill from RFQ: it fills in what the RFQ states, marks those answers, and leaves everything else for you. Nothing is final until you check it.</div>
+ <textarea id="rfqin" aria-label="Paste the RFQ-PREFILL line from Claude" placeholder="Paste the RFQ-PREFILL line from Claude here"></textarea>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="btn primary" id="doRfq">Fill from RFQ</button><span class="err" id="rfqErr"></span>${RFQ_MSG?`<span class="toast">${esc2(RFQ_MSG)}</span>`:""}</div></div></section>`}
+function applyRfq(P){
+ const ids=[],skipped=[];const ans=P.answers||{};
+ Object.keys(ans).forEach(id=>{const q=QS[id];if(!q||!(q.o==="S"||q.o==="V")||q.type==="groups"||q.type==="sizes"||["smeLead","smes"].includes(id)){skipped.push(id);return}
+  const v=ans[id];
+  if(q.type==="text"){if(String(v||"").trim()){A[id]=String(v).trim();ids.push(id)}return}
+  if(q.type==="multi"){const g=(Array.isArray(v)?v:[v]).filter(x=>(q.opts||[]).includes(x));if(g.length){A[id]=g;ids.push(id)}else skipped.push(id);return}
+  if((q.opts||[]).includes(v)){A[id]=v;ids.push(id)}
+  else if(isNumQ(q)&&okAmt(v)){A[id]=fmtLike(q.opts,v);ids.push(id)}
+  else skipped.push(id)});
+ const gcOpts=id=>GC[id].opts||[];const gs=[];
+ (P.groups||[]).forEach(r=>{if(!r||!r.n||!okAmt(r.n))return;const g=blankGroup();
+  if(gcOpts("type").includes(r.type)){g.type=r.type;if(r.type==="Other")g.other=String(r.other||"Other").slice(0,60)}else{g.type="Other";g.other=String(r.other||r.type||"Other").slice(0,60)}
+  g.n=cleanAmt(r.n);if(okAmt(r.sh))g.sh=cleanAmt(r.sh);g.psh=g.sh;
+  ["trh","dch","pn"].forEach(f=>{if(okAmt(r[f]))g[f]=cleanAmt(r[f])});
+  ["same","sun"].forEach(f=>{if(["Yes","No"].includes(r[f]))g[f]=r[f]});gs.push(g)});
+ if(gs.length){A.groups=gs;ids.push("groups")}
+ A._rfq={ids,notes:P.notes||{}};
+ return {filled:ids.length,skipped:skipped.length}}
 function importHTML(){return `<section class="card" id="sec_import"><h2><span class="num">0</span>Import the SME's answers<span class="state${SME?" done":""}">${SME?"Imported":"Needed"}</span></h2><div class="qs import">
  <div class="hint">Paste everything the SME copied from the SME form (it ends with an <b>SME-CODE</b> line), then click Import.</div>
  <textarea id="imp" aria-label="Paste SME answers" placeholder="Paste the SME's copied answers here"></textarea>
  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="btn primary" id="doImport">Import</button><span class="err" id="impErr"></span>${SME?`<span class="toast">Imported ${esc2(SME._when||"")}${SME.clientName?" \u00b7 "+esc2(SME.clientName):""}</span>`:""}</div></div></section>`}
 function render(){
  const secs=SCHEMA.sections.map(s=>({t:s.t,qs:s.qs.filter(q=>mine(q))})).filter(s=>s.qs.length);
- let n=0;document.getElementById("form").innerHTML=(MODE==="co"?importHTML():"")+secs.map(s=>{const vis=s.qs.filter(showOK);if(!vis.length)return "";n++;
+ let n=0;document.getElementById("form").innerHTML=(MODE==="co"?importHTML():rfqHTML())+secs.map(s=>{const vis=s.qs.filter(showOK);if(!vis.length)return "";n++;
   return `<section class="card" id="sec_${n}"><h2><span class="num">${n}</span>${esc2(s.t)}<span class="state" id="st_${n}"></span></h2><div class="qs">${vis.map(qHTML).join("")}</div></section>`}).join("");
  refresh();
 }
@@ -469,7 +496,13 @@ document.addEventListener("click",e=>{const t=e.target;
  const gd=t.closest("[data-gdel]");if(gd){A.groups.splice(+gd.dataset.gdel,1);if(!A.groups.length)A.groups.push(blankGroup());render();return}
  if(t.id==="copy"){const ta=document.getElementById("out"),tt=document.getElementById("toast");const ok=()=>{tt.textContent=MODE==="sme"?"Copied. Send it to Commercial Ops.":"Copied. Paste it to Claude.";setTimeout(()=>tt.textContent="",3500)};
   try{navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.focus();ta.select();tt.textContent="Press Ctrl+C / Cmd+C to copy."})}catch(_){ta.focus();ta.select();tt.textContent="Press Ctrl+C / Cmd+C to copy."}return}
- if(t.id==="doImport"){const raw=document.getElementById("imp").value,m=raw.match(/SME-CODE:\s*([A-Za-z0-9+/=]+)/);const er=document.getElementById("impErr");
+ if(t.id==="doRfq"){const raw=document.getElementById("rfqin").value,m=raw.match(/RFQ-PREFILL:\s*(\{.*\})/);const er=document.getElementById("rfqErr");
+   if(!m){er.textContent="No RFQ-PREFILL line found. Paste the whole line from Claude (it starts with RFQ-PREFILL:).";return}
+   let P;try{P=JSON.parse(m[1])}catch(_){er.textContent="That line couldn't be read. Ask Claude to give the RFQ-PREFILL line again, on one line.";return}
+   const hadWork=filled(A.deviceType)||filled(A.hasStudy)||A.groups.some(g=>g.type&&g.n);
+   if(hadWork&&!confirm("This will replace answers you already entered for the questions in the RFQ line. Continue?"))return;
+   const r=applyRfq(P);RFQ_MSG=`Filled ${r.filled} answer${r.filled===1?"":"s"} from the RFQ${r.skipped?` (${r.skipped} could not be used)`:""}. Check each marked answer.`;render();const s=document.getElementById("sec_rfq");if(s)s.scrollIntoView();return}
+  if(t.id==="doImport"){const raw=document.getElementById("imp").value,m=raw.match(/SME-CODE:\s*([A-Za-z0-9+/=]+)/);const er=document.getElementById("impErr");
   if(!m){er.textContent="No SME-CODE line found. Paste the SME's full copied text.";return}
   try{SME=JSON.parse(decodeURIComponent(escape(atob(m[1]))));A.groups=(SME.groups||[]).filter(g=>g.type&&g.n).map(g=>Object.assign(blankGroup(),{sun:g.sun||""}));render();}catch(_){er.textContent="That code couldn't be read. Ask the SME to copy again."}return}
  if(t.id==="reset"){if(t.dataset.armed){A=fresh();SME=null;delete t.dataset.armed;t.textContent="Start over";render()}else{t.dataset.armed="1";t.textContent="Click again to clear";setTimeout(()=>{if(t.dataset.armed){delete t.dataset.armed;t.textContent="Start over"}},3000)}}
