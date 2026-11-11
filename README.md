@@ -24,6 +24,8 @@ Proposals for regulated-industry studies were slow and inconsistent. Scoping det
 
 **Outcome tracking.** Every proposal in the database can carry an outcome (won, lost, no response) with a reason and final price. A proposal with a signed copy counts as won automatically; a short form prepares the request that records any other result. The database can be filtered by outcome, and the AI skills show outcomes next to every similar proposal they cite. Win rates are only reported once enough decisions are recorded, so an incomplete record cannot make the numbers look better than they are.
 
+**Schedule integration.** The team schedule connects to the drafting flow: a proposal can be added to the schedule from the RFQ and draft pages, and pressing Mark as sent completes the drafting item and schedules a client follow-up a week later. A "This week at a glance" box lists overdue items, items due in seven days, follow-ups owed, and items nobody has updated in a week, and the home page shows a one-line count of your own overdue and upcoming items.
+
 **A team schedule** showing proposal due dates and review status in list and calendar views. In the original it synced live through a hosted database; in this demo a small in-browser stand-in keeps the same calls working.
 
 **A de-identification helper** that scans pasted request text for likely client names and sensitive phrases before anything is sent to an AI tool. It runs entirely client-side.
