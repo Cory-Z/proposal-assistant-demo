@@ -79,7 +79,8 @@ textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
     <li><b>Pre-filled SME intake.</b> One line that starts with <b>RFQ-PREFILL</b>. It carries every answer the RFQ states, such as device type, study type and user groups.</li>
     <li><b>Questions for the client.</b> Only what the RFQ leaves open and that changes scope or price, with the assumption we will use if they do not answer.</li>
     <li><b>A draft email to the client</b> with those questions, ready to edit and send.</li>
-    <li><b>Flags and similar proposals.</b> Anything unusual (tight dates, heavy contract terms) and the 3 closest past proposals with links.</li>
+    <li><b>Early flags and a suggested effort level.</b> Tight deadlines, a participant count well outside what we have done, device or study types we have little history with, non-US sites or currency, specialist scope, heavy contract terms and hard-to-recruit groups, each with why it matters and what to do. It ends with a suggested effort level (standard, extra review or escalate). These are prompts for the team, not a go or no-go decision.</li>
+    <li><b>Similar proposals.</b> The 3 closest past proposals, with links.</li>
   </ol>
 </section>
 
@@ -94,7 +95,7 @@ textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
   <div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn" id="goSme" type="button">Open the SME intake</button><button class="btn ghost" id="goSched" type="button">Add to team schedule</button></div>
   <p class="hintx">Everything Claude produces here is a first pass for a Acme HF reviewer to check, including anything about regulations or clinical details. It comes from the RFQ text only.</p>
 </section>
-<section class="card" aria-labelledby="h4s">
+<section class="card" id="demoSample" aria-labelledby="h4s">
   <h2 id="h4s">Demo: a sample reply for a made-up RFQ</h2>
   <p class="hintx">In the real tool, Claude reads the client's RFQ and sends back the pieces below. This one is invented (a fictional client, device and RFQ) so you can try the rest of the flow.</p>
   <details open><summary>RFQ at a glance</summary><ul class="steps" style="margin-top:8px">
@@ -142,7 +143,7 @@ function buildPrompt(){
   L.push('Proposal I expect to write: '+(type||'not sure yet'));
   L.push(rfq?('RFQ text:\n"""\n'+rfq+'\n"""'):'The RFQ is attached to this message (read all of it, including tables and appendices). If you cannot find an attachment, tell me and wait.');
   if(notes)L.push('My notes:\n'+notes);
-  L.push('Follow the skill\'s RFQ intake step exactly and give me, in this order: (1) RFQ at a glance, with each line marked stated or inferred; (2) the pre-filled SME intake as one RFQ-PREFILL line made with scripts/make_rfq_prefill.py, alone in a code block, plus a plain list of what the SME still has to answer; (3) questions for the client, grouped by what they affect, each with the assumption we will use if they do not answer; (4) a draft email to the client with those questions; (5) flags for the proposal team'+(sim?'; (6) the 3 closest past proposals from the full proposal index with their browser links.':'. Skip the search for similar past proposals.'));
+  L.push('Follow the skill\'s RFQ intake step exactly and give me, in this order: (1) RFQ at a glance, with each line marked stated or inferred; (2) the pre-filled SME intake as one RFQ-PREFILL line made with scripts/make_rfq_prefill.py, alone in a code block, plus a plain list of what the SME still has to answer; (3) questions for the client, grouped by what they affect, each with the assumption we will use if they do not answer; (4) a draft email to the client with those questions; (5) early flags for the proposal team (deadline, scale compared with the proposal index, how much like this we have done, location and currency, specialist scope, contract terms, recruiting difficulty) with a suggested effort level'+(sim?'; (6) the 3 closest past proposals from the full proposal index with their browser links.':'. Skip the search for similar past proposals.'));
   L.push('Use precise HFE terminology consistent with FDA Human Factors guidance and IEC 62366-1: say "use-related risk" (not "user error"), "intended users" and "use scenarios" (not "end users" or "situations"), "summative evaluation" and "formative evaluation" (not "usability test" or "final study"), "simulated use" (not "mock use"), and "critical tasks" for tasks where failure could cause serious harm.');
   L.push('Only fill in what the RFQ states or clearly implies, and say what you are unsure of. End with the skill\'s review note and the skill version line.');
   return L.join('\n');
@@ -158,4 +159,5 @@ byId("copySample").onclick=async()=>{const ok=await copyTxt(byId("sampleLine").t
 byId("goSme2").onclick=()=>byId("goSme").onclick();
 byId("goSme").onclick=()=>{try{if(window.parent&&window.parent!==window&&typeof window.parent.openTool==="function"){window.parent.openTool("tool-sme-intake.html","SME intake");return}}catch(e){}location.href="tool-sme-intake.html"};
 </script>
+<script>(function(){var M=["January","February","March","April","May","June","July","August","September","October","November","December"],n=new Date();function mm(k){var d=new Date(n.getFullYear(),n.getMonth()+k,1);return M[d.getMonth()]+" "+d.getFullYear()}var el=document.getElementById("demoSample");if(el)el.innerHTML=el.innerHTML.split("January 2027").join(mm(2)).split("May 2027").join(mm(6))})();</script>
 </body></html>
