@@ -565,6 +565,12 @@ document.getElementById('howto-tools-list').addEventListener('click', handleHowt
 document.getElementById('add-mode').addEventListener('change', (e) => {
   document.getElementById('add-id-row').hidden = e.target.value !== 'correct';
 });
+document.getElementById('add-proposal-form').addEventListener('reset', () => {
+  const out = document.getElementById('add-proposal-output');
+  out.hidden = true;
+  out.innerHTML = '';
+  document.getElementById('add-id-row').hidden = true;
+});
 document.getElementById('add-proposal-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
