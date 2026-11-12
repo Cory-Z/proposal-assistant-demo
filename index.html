@@ -420,7 +420,10 @@
       <label>Notes
         <textarea name="notes" rows="3" placeholder="Anything the index owner should know: the outcome (won, lost, pending), which version is final, a duplicate of another entry, what is wrong with the current tags."></textarea>
       </label>
-      <button type="submit" class="primary-btn">Prepare request</button>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="primary-btn">Prepare request</button>
+        <button type="reset" class="quiz-option-btn" id="add-reset">Clear form</button>
+      </div>
     </form>
     <div id="add-proposal-output" class="output" hidden></div>
   </section>
