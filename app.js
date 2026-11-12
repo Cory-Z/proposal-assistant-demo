@@ -79,6 +79,7 @@ function showView(name) {
   currentViewName = name;
   window.scrollTo(0, name === 'home' ? homeScrollY : 0);
   if (name === 'home') setTimeout(() => { try { refreshHomeScheduleNudge(); } catch (e) {} }, 300);
+  if (name === 'home') { try { renderGuide(); } catch (e) {} }
 }
 const ACCESS_KEY = 'acmeAccessEmail';
 function grantAccess(email) {
@@ -1500,6 +1501,114 @@ function refreshHomeScheduleNudge() {
     if (done && unsub) unsub();
   } catch (err) { /* the nudge is optional */ }
 }
+
+// --- "I just got an RFQ" guided steps with a progress bar (also shown on the home card) ---
+const GUIDE_KEY = 'clariproGuideV1';
+const GUIDE_STEPS = [
+  { id: 'rfq', short: 'RFQ', title: 'Start from the RFQ', who: 'Proposal writer',
+    desc: 'Paste or attach the RFQ in Claude (Cowork). You get a summary, a pre-filled SME intake line, questions for the client, a draft email, early flags and a suggested effort level.',
+    open: () => openTool('tool-rfq-start.html', 'Start from an RFQ'), btn: 'Open Start from an RFQ' },
+  { id: 'sme', short: 'SME intake', title: 'SME intake', who: 'SME',
+    desc: 'The SME pastes the RFQ-PREFILL line, checks every pre-filled answer, answers the rest, and copies the result.',
+    open: () => openTool('tool-sme-intake.html', 'SME intake'), btn: 'Open the SME intake' },
+  { id: 'commops', short: 'Comm Ops', title: 'Comm Ops intake', who: 'Comm Ops',
+    desc: 'Comm Ops imports the SME answers, adds the commercial inputs, and copies the final answers for Claude.',
+    open: () => openTool('tool-comm-ops-intake.html', 'Comm Ops intake'), btn: 'Open the Comm Ops intake' },
+  { id: 'check', short: 'Check (optional)', title: 'Check similar proposals, pricing or the timeline', who: 'Proposal writer', optional: true,
+    desc: 'Find similar past proposals, check a number in the pricing calculator, or build a timeline. Skip this if you do not need it.',
+    open: () => showView('search'), btn: 'Find similar proposals' },
+  { id: 'draft', short: 'Draft', title: 'Draft in Cowork', who: 'Proposal writer',
+    desc: 'Build the drafting prompt, paste it into Cowork, and let the drafting skill produce the first-pass proposal.',
+    open: () => showView('draft'), btn: 'Open Draft proposal' },
+  { id: 'review', short: 'Review', title: 'Review the draft', who: 'Proposal writer and SME',
+    desc: 'Fill in the yellow items, resolve the consistency-check flags, and have the SME go through the "Needs review" summary before anything goes to the client.',
+    open: () => showView('howto'), btn: 'Open the how-to' },
+  { id: 'send', short: 'Send', title: 'Send it and schedule the follow-up', who: 'Proposal writer',
+    desc: 'Add the proposal to the team schedule, press Mark as sent when it goes out, and record the outcome when you hear back.',
+    open: () => { openScheduleTool(); showView('schedule'); }, btn: 'Open the team schedule' },
+];
+function guideLoad() {
+  try {
+    const s = JSON.parse(localStorage.getItem(GUIDE_KEY) || 'null');
+    if (s && Array.isArray(s.done)) return { label: String(s.label || ''), done: s.done.filter((x) => GUIDE_STEPS.some((st) => st.id === x)) };
+  } catch (e) { /* storage unavailable */ }
+  return { label: '', done: [] };
+}
+function guideSave(s) { try { localStorage.setItem(GUIDE_KEY, JSON.stringify(s)); } catch (e) { /* ignore */ } }
+function guideStatus(s) {
+  const req = GUIDE_STEPS.filter((st) => !st.optional);
+  const doneReq = req.filter((st) => s.done.includes(st.id)).length;
+  const next = req.find((st) => !s.done.includes(st.id));
+  return { total: req.length, doneReq, next, complete: !next };
+}
+function guideProgressHTML(s) {
+  const st = guideStatus(s);
+  const firstOpen = GUIDE_STEPS.find((x) => !x.optional && !s.done.includes(x.id));
+  const segs = GUIDE_STEPS.map((x, i) => {
+    const cls = ['gp-seg'];
+    if (s.done.includes(x.id)) cls.push('done'); else if (firstOpen && firstOpen.id === x.id) cls.push('cur');
+    if (x.optional) cls.push('opt');
+    return `<span class="${cls.join(' ')}" title="${redactEscapeHtml((i + 1) + '. ' + x.title + (x.optional ? ' (optional)' : ''))}"></span>`;
+  }).join('');
+  const label = st.doneReq === 0 && !s.done.length ? 'Not started'
+    : st.complete ? 'All required steps done'
+    : `${st.doneReq} of ${st.total} required steps done. Next: ${st.next.title}`;
+  return `<span class="gp-bar">${segs}</span><span class="gp-label">${redactEscapeHtml(label)}</span>`;
+}
+let guideFocusId = null;
+function renderGuide() {
+  const list = document.getElementById('guide-steps');
+  if (!list) return;
+  const s = guideLoad();
+  const st = guideStatus(s);
+  document.getElementById('guide-progress').innerHTML = guideProgressHTML(s);
+  const focus = GUIDE_STEPS.find((x) => x.id === guideFocusId) || st.next || GUIDE_STEPS[GUIDE_STEPS.length - 1];
+  list.innerHTML = GUIDE_STEPS.map((x, i) => `
+    <span class="gchip${s.done.includes(x.id) ? ' done' : ''}${x.id === focus.id ? ' focus' : ''}${x.optional ? ' opt' : ''}">
+      <input type="checkbox" id="gs-${x.id}" data-step="${x.id}" ${s.done.includes(x.id) ? 'checked' : ''} aria-label="Step ${i + 1}, ${redactEscapeHtml(x.title)}, done">
+      <button type="button" class="gchip-t" data-step="${x.id}" title="${redactEscapeHtml(x.title)}">${i + 1}. ${redactEscapeHtml(x.short)}</button>
+    </span>`).join('');
+  const idx = GUIDE_STEPS.indexOf(focus) + 1;
+  document.getElementById('guide-focus').innerHTML = `
+    <span class="gf-text"><b>${idx}. ${redactEscapeHtml(focus.title)}</b>${focus.optional ? ' <span class="gs-tag">optional</span>' : ''} <span class="gf-who">${redactEscapeHtml(focus.who)}</span><br>${redactEscapeHtml(focus.desc)}</span>
+    <button type="button" class="primary-btn gf-open" data-step="${focus.id}">${redactEscapeHtml(focus.btn)}</button>`;
+  document.getElementById('guide-done-note').hidden = !st.complete;
+  const lab = document.getElementById('guide-label');
+  if (lab && document.activeElement !== lab) lab.value = s.label;
+}
+document.getElementById('guide-steps').addEventListener('change', (e) => {
+  const id = e.target && e.target.dataset && e.target.dataset.step;
+  if (!id) return;
+  const s = guideLoad();
+  s.done = e.target.checked ? Array.from(new Set(s.done.concat(id))) : s.done.filter((x) => x !== id);
+  guideSave(s);
+  guideFocusId = null;
+  renderGuide();
+});
+document.getElementById('guide-steps').addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('.gchip-t');
+  if (!b) return;
+  guideFocusId = b.dataset.step;
+  renderGuide();
+});
+document.getElementById('guide-focus').addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('.gf-open');
+  if (!b) return;
+  const st = GUIDE_STEPS.find((x) => x.id === b.dataset.step);
+  if (st) st.open();
+});
+document.getElementById('guide-label').addEventListener('input', (e) => {
+  const s = guideLoad(); s.label = e.target.value.slice(0, 80); guideSave(s);
+});
+document.getElementById('guide-new').addEventListener('click', () => {
+  const s = guideLoad();
+  if ((s.done.length || s.label) && !window.confirm('Clear the progress and name for this RFQ and start a new one?')) return;
+  guideSave({ label: '', done: [] });
+  guideFocusId = null;
+  document.getElementById('guide-label').value = '';
+  renderGuide();
+});
+renderGuide();
 
 // --- Proposal status & team schedule: calendar view ---
 let scheduleViewMode = 'list';
