@@ -39,6 +39,17 @@
     <h1 class="home-heading">Proposal Assistant</h1><p class="demo-banner" style="margin:0 0 18px;padding:10px 14px;border:1px solid var(--border);border-left:4px solid var(--pink);border-radius:8px;background:#fff;font-size:14px;color:var(--text-muted);">Portfolio demo by Corien Zavod. Everything here is fictional: the company (Acme HF), clients, people, proposals and rates are invented, and nothing is sent anywhere. The tools run in your browser.</p>
     <p id="home-stats" class="home-stats"></p>
     <p id="home-schedule-nudge" class="home-stats" hidden></p>
+<section class="home-section start-compact" id="start-here">
+    <div class="sh-head">
+      <h2 class="sh-title">Start here: I just got an RFQ</h2>
+      <input type="text" id="guide-label" maxlength="80" placeholder="Name this RFQ (optional)" aria-label="Name this RFQ (optional)">
+      <button type="button" class="sh-new" id="guide-new">New RFQ</button>
+    </div>
+    <div id="guide-progress"></div>
+    <div id="guide-steps" class="gchips"></div>
+    <div id="guide-focus" class="gfocus"></div>
+    <div id="guide-done-note" class="sh-note" hidden>All required steps are done. Press Mark as sent in the team schedule when it goes out, and record the outcome when you hear back.</div>
+    </section>
 <section class="home-section">
     <h2 class="home-section-title">Proposal drafting</h2>
     <p class="home-section-sub">Draft a proposal prompt for Claude, or find similar past proposals.</p>
