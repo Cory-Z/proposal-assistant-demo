@@ -24,6 +24,12 @@ Proposals for regulated-industry studies were slow and inconsistent. Scoping det
 
 **Outcome tracking.** Every proposal in the database can carry an outcome (won, lost, no response) with a reason and final price. A proposal with a signed copy counts as won automatically; a short form prepares the request that records any other result. The database can be filtered by outcome, and the AI skills show outcomes next to every similar proposal they cite. Win rates are only reported once enough decisions are recorded, so an incomplete record cannot make the numbers look better than they are.
 
+**Several studies in one proposal.** The commercial intake form has an optional "Additional studies" section (study type, section name and a small user-group table for each extra study). Each study is priced and shown separately, with onboarding split between the first study and follow-ups and project management priced per study; the demo form collects the answers, and the drafting skill (not part of this demo) turns them into one multi-study document.
+
+**Onboarding tiers.** Onboarding can be Standard, Complex or Very complex, or a typed amount that replaces the calculated figure.
+
+**Past recruitment and incentive amounts.** Under the user-group table the commercial form shows starting points for each group (range, median and the most recent proposals) read from a data file built from past proposals. In this demo the file is invented sample data. The original rebuilds it from the real proposal text every week.
+
 **Schedule integration.** The team schedule connects to the drafting flow: a proposal can be added to the schedule from the RFQ and draft pages, and pressing Mark as sent completes the drafting item and schedules a client follow-up a week later. A "This week at a glance" box lists overdue items, items due in seven days, follow-ups owed, and items nobody has updated in a week, and the home page shows a one-line count of your own overdue and upcoming items.
 
 **A team schedule** showing proposal due dates and review status in list and calendar views. In the original it synced live through a hosted database; in this demo a small in-browser stand-in keeps the same calls working.
