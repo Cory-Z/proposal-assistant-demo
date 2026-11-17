@@ -79,13 +79,13 @@ details summary{cursor:pointer;color:var(--purple);font-weight:600}
 <script>
 
 const RATES_DEFAULT={Rate:176,DayHrs:8,RecRate:80,FacRate:120,SessWindow:6.5,ConductUplift:1.2,ReviewPct:0.5,CogHrs:2,
- OnbPeople:3,OnbStd:0.5,OnbCx:1,OnbRound:800,ScrSolidC:1,ScrSolidR:1,ScrPoorC:2,ScrPoorR:2,AgrBase:2,AgrAdd:1,
+ OnbPeople:3,OnbStd:0.5,OnbCx:1,OnbVC:1.7,OnbRound:800,ScrSolidC:1,ScrSolidR:1,ScrPoorC:2,ScrPoorR:2,AgrBase:2,AgrAdd:1,
  ProtoFormBase:4800,ProtoFormAdd:800,ProtoVSBase:6400,ProtoVSAdd:800,ProtoRevFormBase:1600,ProtoRevFormAdd:800,ProtoRevVSBase:2400,ProtoRevVSAdd:800,
  DSCreate:1200,DSReview:600,ModBase:1600,ModPerHr:400,LogHrs:1,DemoHrs:2,HFDays:3,IRBExp:2000,IRBFull:4720,DBFee:1200,AnalysisRatio:2,
  QSDays:2,PMMin:4000,PMRate:176,Markup:0.10,MarkupRound:200,OverRecruit:0.2,PrepAdj:0.9,RepFixed:8000,RepPax:320,RepLen:108,RepCritS:800,RepCritM:2400,RepUES:52,RepUEM:160,RepTmpl:1600,
  FacilityDay:1600,TrainRoomDay:500,AdminFee:20,SunshineFee:60,Subsist:100,Hotel:200,Flight:480};
 const RATE_LABELS={Rate:"Consultant $/hr",DayHrs:"Hours per day",RecRate:"Recruitment $/hr (assumed)",FacRate:"Facilitator $/hr",SessWindow:"Session hrs per study day",ConductUplift:"Conduct uplift \u00d7",ReviewPct:"Review % of creation (assumed)",CogHrs:"Cognitive bias training hrs (assumed)",
- OnbPeople:"Onboarding staff per team",OnbStd:"Onboarding days/person (standard)",OnbCx:"Onboarding days/person (complex)",OnbRound:"Onboarding round-up to $",
+ OnbPeople:"Onboarding staff per team",OnbStd:"Onboarding days/person (standard)",OnbCx:"Onboarding days/person (complex)",OnbVC:"Onboarding days/person (very complex)",OnbRound:"Onboarding round-up to $",
  ScrSolidC:"Screener hrs: solid draft, consultant",ScrSolidR:"Screener hrs: solid draft, recruitment",ScrPoorC:"Screener hrs: poor draft, consultant",ScrPoorR:"Screener hrs: poor draft, recruitment",AgrBase:"Agreement hrs: first group",AgrAdd:"Agreement hrs: each extra group",
  ProtoFormBase:"Protocol create ef/lf base",ProtoFormAdd:"\u2026 per extra distinct group",ProtoVSBase:"Protocol create vs base",ProtoVSAdd:"\u2026 per extra distinct group",ProtoRevFormBase:"Protocol review ef/lf base",ProtoRevFormAdd:"\u2026 per extra distinct group",ProtoRevVSBase:"Protocol review vs base",ProtoRevVSAdd:"\u2026 per extra distinct group",
  DSCreate:"Data sheets create /session-hr/group",DSReview:"Data sheets review /session-hr/group",ModBase:"Moderator script base /group",ModPerHr:"Moderator script per extra hr",LogHrs:"Article log hrs /group",DemoHrs:"Demographics hrs /group",
@@ -101,7 +101,7 @@ const TIERS=["Few","Standard","Many"];
 const RPR_LABELS={Base:"Base setup and structure (hrs)",Group:"Per distinct user group (hrs)",Sess:"Per session, 1-hr session (hrs)",Len:"Session-length uplift per extra hr (fraction)",Tmpl:"First-time client template (hrs)",Round:"Per extra review round (hrs)"};
 const EXAMPLE={studyType:"Later Formative",teams:1,breakMin:15,format:"Individual",comboPPD:"",
  groups:[{name:"Nurses",n:12,sh:1,distinct:"Yes",rr:200,it:80,tr:80,ppd:""},{name:"Patients",n:10,sh:1.5,distinct:"Yes",rr:120,it:60,tr:40,ppd:""}],
- onbLevel:"Standard",hf:"No",scr:"Yes",scrDraft:"Solid client draft",scrCx:1,agr:"Yes",irb:"None",
+ onbLevel:"Standard",onbManual:"",hf:"No",scr:"Yes",scrDraft:"Solid client draft",scrCx:1,agr:"Yes",irb:"None",
  prepSess:"",protoSt:"Create",protoCx:1,dsSt:"Create",modSt:"Create",logSt:"Create",demoSt:"Create",
  setup:4,takedown:2,clientSetup:"No",clientSetupHrs:0,camera:2,dry:2,dryStaff:2,ship:0,buffer:0,pilot:"No",pilotGroups:null,pilotUpdHrs:0,mods:1,obs:1,clientObs:"No",clientObsN:1,facHrs:8,
  rpCrit:"Standard",rpUE:"Few",rpTmpl:"No",
@@ -157,8 +157,8 @@ function compute(){
  const modSum=!UG?0:dg.length?dg.reduce((a,g)=>a+R.ModBase+R.ModPerHr*Math.max(0,num(g.sh)-1),0):R.ModBase+R.ModPerHr*Math.max(0,maxSess-1);
  const avgOver=pps===1?(pax?gs.reduce((a,g)=>a+g.pn*Math.max(0,num(g.sh)-1),0)/pax:0):Math.max(0,maxSess-1);
  const L={},C={};
- C.onbDays=S.onbLevel==="Complex"?R.OnbCx:R.OnbStd;C.onbStaff=teams*R.OnbPeople;
- L.onb=Math.ceil(C.onbStaff*C.onbDays*dayRate/R.OnbRound)*R.OnbRound;
+ C.onbDays=S.onbLevel==="Very complex"?R.OnbVC:(S.onbLevel==="Complex"?R.OnbCx:R.OnbStd);C.onbStaff=teams*R.OnbPeople;
+ L.onb=parseFloat(S.onbManual)>0?parseFloat(S.onbManual):Math.ceil(C.onbStaff*C.onbDays*dayRate/R.OnbRound)*R.OnbRound;
  L.hf=S.hf==="Yes"?mu(R.HFDays*dayRate):0;
  const solid=S.scrDraft==="Solid client draft";
  C.scrPer=solid?R.ScrSolidC*R.Rate+R.ScrSolidR*R.RecRate:R.ScrPoorC*R.Rate+R.ScrPoorR*R.RecRate;
