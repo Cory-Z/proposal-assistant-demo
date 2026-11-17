@@ -108,13 +108,13 @@ ol.open{margin:0;padding-left:20px;font-size:.86rem;display:grid;gap:4px}
 
 <script>
 const RATES_DEFAULT={Rate:176,DayHrs:8,RecRate:80,FacRate:120,SessWindow:6.5,ConductUplift:1.2,ReviewPct:0.5,CogHrs:2,
- OnbPeople:3,OnbStd:0.5,OnbCx:1,OnbRound:800,ScrSolidC:1,ScrSolidR:1,ScrPoorC:2,ScrPoorR:2,AgrBase:2,AgrAdd:1,
+ OnbPeople:3,OnbStd:0.5,OnbCx:1,OnbVC:1.7,OnbRound:800,ScrSolidC:1,ScrSolidR:1,ScrPoorC:2,ScrPoorR:2,AgrBase:2,AgrAdd:1,
  ProtoFormBase:4800,ProtoFormAdd:800,ProtoVSBase:6400,ProtoVSAdd:800,ProtoRevFormBase:1600,ProtoRevFormAdd:800,ProtoRevVSBase:2400,ProtoRevVSAdd:800,
  DSCreate:1200,DSReview:600,ModBase:1600,ModPerHr:400,LogHrs:1,DemoHrs:2,HFDays:3,IRBExp:2000,IRBFull:4720,DBFee:1200,AnalysisRatio:2,
  QSDays:2,PMMin:4000,PMRate:176,Markup:0.10,MarkupRound:200,OverRecruit:0.2,PrepAdj:0.9,RepFixed:8000,RepPax:320,RepLen:108,RepCritS:800,RepCritM:2400,RepUES:52,RepUEM:160,RepTmpl:1600,
  FacilityDay:1600,TrainRoomDay:500,AdminFee:20,AdminFee2:40,AdminFee3:80,AdminCut1:400,AdminCut2:2000,SunshineFee:60,Subsist:100,Hotel:200,Flight:480};
 const RATE_LABELS={Rate:"Consultant $/hr",DayHrs:"Hours per day",RecRate:"Recruitment $/hr (assumed)",FacRate:"Facilitator $/hr",SessWindow:"Session hrs per study day",ConductUplift:"Conduct uplift \u00d7",ReviewPct:"Review % of creation (assumed)",CogHrs:"Cognitive bias training hrs (assumed)",
- OnbPeople:"Onboarding staff per team",OnbStd:"Onboarding days/person (standard)",OnbCx:"Onboarding days/person (complex)",OnbRound:"Onboarding round-up to $",
+ OnbPeople:"Onboarding staff per team",OnbStd:"Onboarding days/person (standard)",OnbCx:"Onboarding days/person (complex)",OnbVC:"Onboarding days/person (very complex)",OnbRound:"Onboarding round-up to $",
  ScrSolidC:"Screener hrs: solid draft, consultant",ScrSolidR:"Screener hrs: solid draft, recruitment",ScrPoorC:"Screener hrs: poor draft, consultant",ScrPoorR:"Screener hrs: poor draft, recruitment",AgrBase:"Agreement hrs: first group",AgrAdd:"Agreement hrs: each extra group",
  ProtoFormBase:"Protocol create ef/lf base",ProtoFormAdd:"\u2026 per extra distinct group",ProtoVSBase:"Protocol create vs base",ProtoVSAdd:"\u2026 per extra distinct group",ProtoRevFormBase:"Protocol review ef/lf base",ProtoRevFormAdd:"\u2026 per extra distinct group",ProtoRevVSBase:"Protocol review vs base",ProtoRevVSAdd:"\u2026 per extra distinct group",
  DSCreate:"Data sheets create /session-hr/group",DSReview:"Data sheets review /session-hr/group",ModBase:"Moderator script base /group",ModPerHr:"Moderator script per extra hr",LogHrs:"Article log hrs /group",DemoHrs:"Demographics hrs /group",
@@ -130,7 +130,7 @@ const TIERS=["Few","Standard","Many"];
 const RPR_LABELS={Base:"Base setup and structure (hrs)",Group:"Per distinct user group (hrs)",Sess:"Per session, 1-hr session (hrs)",Len:"Session-length uplift per extra hr (fraction)",Tmpl:"First-time client template (hrs)",Round:"Per extra review round (hrs)"};
 const EXAMPLE={studyType:"Later Formative",teams:1,breakMin:15,format:"Individual",comboPPD:"",
  groups:[{name:"Nurses",n:12,sh:1,distinct:"Yes",rr:200,it:80,tr:80,ppd:""},{name:"Patients",n:10,sh:1.5,distinct:"Yes",rr:120,it:60,tr:40,ppd:""}],
- onbLevel:"Standard",hf:"No",scr:"Yes",scrDraft:"Solid client draft",scrCx:1,agr:"Yes",irb:"None",
+ onbLevel:"Standard",onbManual:"",hf:"No",scr:"Yes",scrDraft:"Solid client draft",scrCx:1,agr:"Yes",irb:"None",
  prepSess:"",protoSt:"Create",protoCx:1,dsSt:"Create",modSt:"Create",logSt:"Create",demoSt:"Create",
  setup:4,takedown:2,clientSetup:"No",clientSetupHrs:0,camera:2,dry:2,dryStaff:2,ship:0,buffer:0,pilot:"No",pilotGroups:null,pilotUpdHrs:0,mods:1,obs:1,clientObs:"No",clientObsN:1,facHrs:8,
  rpCrit:"Standard",rpUE:"Few",rpTmpl:"No",
@@ -186,8 +186,8 @@ function compute(){
  const modSum=!UG?0:dg.length?dg.reduce((a,g)=>a+R.ModBase+R.ModPerHr*Math.max(0,num(g.sh)-1),0):R.ModBase+R.ModPerHr*Math.max(0,maxSess-1);
  const avgOver=pps===1?(pax?gs.reduce((a,g)=>a+g.pn*Math.max(0,num(g.sh)-1),0)/pax:0):Math.max(0,maxSess-1);
  const L={},C={};
- C.onbDays=S.onbLevel==="Complex"?R.OnbCx:R.OnbStd;C.onbStaff=teams*R.OnbPeople;
- L.onb=Math.ceil(C.onbStaff*C.onbDays*dayRate/R.OnbRound)*R.OnbRound;
+ C.onbDays=S.onbLevel==="Very complex"?R.OnbVC:(S.onbLevel==="Complex"?R.OnbCx:R.OnbStd);C.onbStaff=teams*R.OnbPeople;
+ L.onb=parseFloat(S.onbManual)>0?parseFloat(S.onbManual):Math.ceil(C.onbStaff*C.onbDays*dayRate/R.OnbRound)*R.OnbRound;
  L.hf=S.hf==="Yes"?mu(R.HFDays*dayRate):0;
  const solid=S.scrDraft==="Solid client draft";
  C.scrPer=solid?R.ScrSolidC*R.Rate+R.ScrSolidR*R.RecRate:R.ScrPoorC*R.Rate+R.ScrPoorR*R.RecRate;
@@ -262,7 +262,8 @@ const SECTIONS=[
   <p class="logic">Sessions/day shows the recommended value, round down[(6.5 + break hrs) \u00f7 (session hrs + break hrs)] (1 hr \u2192 5, 2 hr \u2192 3, 3 hr \u2192 2). Type over it to override; overrides show in bold with a \u21ba to go back. Session hrs is the study session only; training/decay time is not included. Sunshine Act: mark Yes only for groups whose payments must be reported (e.g., US physicians and certain other licensed clinicians); confirm with the client/compliance. If a group has training/decay, lower its sessions/day to fit the full on-site time. Travel reimbursement is usually $40 or $80 by participant type. Dyad/triad: sessions = participants \u00f7 2 or 3, and each session's data hours are split across the groups in it.</p></div>
   ${calc("User groups / distinct groups","o_groups")}${calc("Participants: net \u2192 priced","o_pax")}${calc("Format used / total sessions","o_fmt")}${calc("Session days (staff) / calendar days","o_days")}${calc("Video hours / longest session","o_video")}`},
  {n:1,t:"Project onboarding",chip:"onb",html:()=>`
-  ${row("Device complexity",sel("onbLevel",["Standard","Complex"]),"Standard = 0.5 day per person. Complex = 1 day per person.")}
+  ${row("Device complexity",sel("onbLevel",["Standard","Complex","Very complex"]),"Standard = 0.5 day per person. Complex = 1 day per person. Very complex = about 1.7 days per person (about $7,200 for 3 staff).")}
+  ${row("Or enter an onboarding amount",inpt("onbManual","any","optional"),"Leave blank to use the tier above. A typed amount replaces the calculated onboarding cost.")}
   ${calc("Staff \u00d7 days per person","o_onb")}${result("r_onb_l","r_onb")}
   <p class="logic">Teams \u00d7 3 staff \u00d7 days per person \u00d7 day rate, rounded up to the nearest $800.</p>`},
  {n:2,t:"High-fidelity study model",chip:"hf",html:()=>`${row("Include?",sel("hf",YN),"Available for every study type.")}${result("r_hf_l","r_hf")}<p class="logic">3 days \u00d7 day rate.</p>`},
@@ -425,7 +426,7 @@ load();build();update();
 <script>
 (function(){
  const $q=id=>document.getElementById(id);
- const KEYS=["studyType","teams","breakMin","format","onbLevel","hf","scr","scrDraft","scrCx","agr","irb","protoSt","protoCx","dsSt","modSt","logSt","demoSt","setup","takedown","clientSetup","clientSetupHrs","camera","dry","dryStaff","ship","buffer","pilot","pilotUpdHrs","mods","obs","clientObs","clientObsN","facHrs","rpCrit","rpUE","rpTmpl","train","studySite","initFee","adminOvr","misc","devShip","travC","travSetup","travDays","travExtra","travTime","travTrans","pm","pmMethod","pmPct","pmHrsWk","pmWeeks"];
+ const KEYS=["studyType","teams","breakMin","format","onbLevel","onbManual","hf","scr","scrDraft","scrCx","agr","irb","protoSt","protoCx","dsSt","modSt","logSt","demoSt","setup","takedown","clientSetup","clientSetupHrs","camera","dry","dryStaff","ship","buffer","pilot","pilotUpdHrs","mods","obs","clientObs","clientObsN","facHrs","rpCrit","rpUE","rpTmpl","train","studySite","initFee","adminOvr","misc","devShip","travC","travSetup","travDays","travExtra","travTime","travTrans","pm","pmMethod","pmPct","pmHrsWk","pmWeeks"];
  const b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
  const usd=n=>"$"+Math.round(n).toLocaleString("en-US");
  function build(){
