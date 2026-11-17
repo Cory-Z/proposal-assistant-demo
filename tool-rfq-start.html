@@ -64,7 +64,7 @@ textarea:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
     <p class="hintx">Attaching the file is better for long RFQs and tables. Do not include real patient data.</p></div>
   <div class="f"><label for="nt">Anything else Claude should know (optional)</label><textarea id="nt" rows="3" placeholder="For example: notes from a call with the client, what the client already told us, deadlines."></textarea></div>
   <div class="chips"><label><input type="checkbox" id="sim" checked> Also list the 3 closest past proposals</label></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="build" type="button">Build my prompt for Claude</button><span class="status" id="msg" aria-live="polite"></span></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="build" type="button">Build my prompt for Claude</button><button class="btn ghost" id="clearRfq" type="button">Clear form</button><span class="status" id="msg" aria-live="polite"></span></div>
   <div id="outBox" hidden style="display:grid;gap:10px">
     <p class="hintx" style="color:var(--fg)">Open Claude and start a <b>Cowork</b> session (not a regular chat). If your RFQ is a file, attach it. Paste this in and send. Claude will ask you to approve the Proposal Index folder; approve it.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://claude.ai/new" target="_blank" rel="noopener" style="text-decoration:none">Open Claude</a><button class="btn ghost" id="again" type="button">Copy prompt again</button></div>
@@ -153,6 +153,8 @@ byId("build").onclick=async()=>{const p=buildPrompt();byId("outBox").hidden=fals
   const ok=await copyTxt(p);byId("msg").textContent=ok?"Prompt copied. Paste it into Claude.":"Could not copy automatically. Select the text below and copy it.";
   if(byId("rfq").value.length>40000)byId("msg").textContent+=" This RFQ is very long: attaching the file in Claude may work better.";
   byId("outBox").scrollIntoView({block:"nearest"})};
+byId("clearRfq").onclick=()=>{if((byId("rfq").value.trim()||byId("nt").value.trim())&&!confirm("Clear everything on this page, including the RFQ text you pasted?"))return;
+  byId("cl").value="";byId("pt").value="";byId("rfq").value="";byId("nt").value="";byId("sim").checked=true;byId("prompt").textContent="";byId("outBox").hidden=true;byId("msg").textContent="Cleared.";byId("cl").focus()};
 byId("again").onclick=async()=>{const ok=await copyTxt(byId("prompt").textContent);byId("msg").textContent=ok?"Copied.":"Could not copy automatically."};
 byId("goSched").onclick=()=>{try{if(window.parent&&window.parent!==window&&typeof window.parent.openScheduleWithPrefill==="function"){window.parent.openScheduleWithPrefill({taskType:"Drafting"});return}}catch(e){}alert("Open the Proposal status & team schedule tool from the home page to add this proposal.")};
 byId("copySample").onclick=async()=>{const ok=await copyTxt(byId("sampleLine").textContent);byId("msg2").textContent=ok?"Copied. Now open the SME intake and paste it in.":"Could not copy automatically. Select the line and copy it."};
