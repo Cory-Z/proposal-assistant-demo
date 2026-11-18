@@ -445,12 +445,21 @@ document.addEventListener("change",e=>{const t=e.target;if(MODE!=="co"||!t.datas
  P.forEach(ph=>{ph.items=(ph.items||[]).filter(x=>x!==tok)});if(t.checked)P[i].items.push(tok);
  const y=window.scrollY;render();window.scrollTo(0,y)});
 document.addEventListener("input",e=>{const t=e.target;if(MODE!=="co"||!t.dataset||t.dataset.ph!=="name")return;const P=((A.xo||{}).phases)||[];if(P[+t.dataset.pi]){P[+t.dataset.pi].name=t.value;refresh()}});
+
+function siteHTML(){if(MODE!=="co"||finalVal("hasStudy")!=="Yes")return "";const L=A.sites||[];
+ return `<section class="card" id="sec_sites"><h2><span class="num">+</span>Study sites (optional)</h2><div class="qs"><div class="q"><div class="hint">Use this when the study runs at more than one site (for example two cities). Add every site, including the first, and the share of participants at each. Per-site costs repeat for each site (study conduct, facilitator, facility rental, consultant travel and room setup); onboarding, protocol, screeners, recruitment, incentives, analysis and the report stay shared. Claude prices this when it drafts the proposal; the estimate on this page does not include it. Leave empty for a single site.</div>`+
+ L.map((x,i)=>`<p><label>Site ${i+1} <input class="xsin" data-st="name" data-si="${i}" placeholder="Site name or city" style="min-width:200px" value="${esc2(x.name||"")}"></label> <label>Share of participants (%) <input class="xsin" data-st="share" data-si="${i}" inputmode="decimal" placeholder="equal" style="width:80px" value="${esc2(x.share||"")}"></label> <button type="button" ${XS_BTN} data-st="del" data-si="${i}">Remove site</button></p>`).join("")+
+ `<p><button type="button" ${XS_BTN} data-st="add">+ Add site</button></p></div></div></section>`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("button[data-st]");if(!t||MODE!=="co")return;A.sites=A.sites||[];const a=t.dataset.st,i=+t.dataset.si;
+ if(a==="add")A.sites.push({name:"",share:""});else if(a==="del")A.sites.splice(i,1);else return;
+ const y=window.scrollY;render();window.scrollTo(0,y)});
+document.addEventListener("input",e=>{const t=e.target;if(MODE!=="co"||!t.dataset||!t.dataset.st||t.tagName!=="INPUT")return;const x=(A.sites||[])[+t.dataset.si];if(x){x[t.dataset.st]=t.value;refresh()}});
 function phHTML(){if(MODE!=="co"||finalVal("hasStudy")!=="Yes")return "";const ph=(A.xo||{}).phased||"";return `<section class="card" id="sec_ph"><h2><span class="num">+</span>Phases (optional)</h2><div class="qs"><div class="q"><div class="hint">Phased: the proposal splits the price by phase (one phase per study by default, the report last), with a total for each phase. Use it when the client signs off phase by phase or when fixed fee and time &amp; materials are mixed.</div><p><label>Phased proposal? <select class="xsin" data-xo="phased"><option value=""${ph===""?" selected":""}>No</option><option value="Yes"${ph==="Yes"?" selected":""}>Yes</option></select></label></p>${ph==="Yes"?phEditor():""}</div></div></section>`}
 function render(){
  const secs=SCHEMA.sections.map(s=>({t:s.t,qs:s.qs.filter(q=>mine(q))})).filter(s=>s.qs.length);
  let n=0;document.getElementById("form").innerHTML=(MODE==="co"?importHTML():"")+secs.map(s=>{const vis=s.qs.filter(showOK);if(!vis.length)return "";n++;
   return `<section class="card" id="sec_${n}"><h2><span class="num">${n}</span>${esc2(s.t)}<span class="state" id="st_${n}"></span></h2><div class="qs">${vis.map(qHTML).join("")}</div></section>`}).join("");
- if(MODE==="co")document.getElementById("form").insertAdjacentHTML("beforeend",phHTML()+xsHTML());
+ if(MODE==="co")document.getElementById("form").insertAdjacentHTML("beforeend",phHTML()+siteHTML()+xsHTML());
  refresh();
 }
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-xs]");if(!t||MODE!=="co")return;const a=t.dataset.xs,i=+t.dataset.xi;A.extra=A.extra||[];
@@ -512,6 +521,7 @@ function summary(r){
   ans.delivSizes=Object.fromEntries(selDelivs().map(d=>[d,SZ[sizeIdx(d)]]));
   const pd={v:1,answers:ans,groups:sg,models:Object.fromEntries(dmIncluded().map(d=>[d,dmModel(d)])),sizes:Object.fromEntries(selDelivs().filter(d=>ODP_OF[d]).map(d=>[ODP_OF[d],sizeIdx(d)]))};
   if(f("hasStudy")==="Yes"&&(A.extra||[]).length)pd.extraStudies=A.extra.map(x=>({label:x.label||"",...(nn(x.rlo)>0&&nn(x.rhi)>nn(x.rlo)?{range:{low:nn(x.rlo),high:nn(x.rhi)}}:{}),answers:{studyType:x.type},groups:x.groups.filter(g=>g.name&&nn(g.n)>0).map(g=>({name:g.name,n:g.n,sh:g.sh||"1",same:"No",rr:g.rr||"",it:g.it||"",tr:g.tr||""}))}));
+  if(f("hasStudy")==="Yes"){const ss=(A.sites||[]).filter(x=>(x.name||"").trim());if(ss.length>1)pd.sites=ss.map(x=>({name:x.name.trim(),...(nn(x.share)>0?{share:nn(x.share)/100}:{})}))}
   if(f("hasStudy")==="Yes"&&A.xo){if(A.xo.phased==="Yes"){pd.phased=true;const pp=(A.xo.phases||[]).filter(x=>(x.items||[]).length).map(x=>({name:x.name||"",items:x.items}));if(pp.length)pd.phases=pp}const fo={};if((A.extra||[]).length)[["init","init"],["scr","scr"],["prep","prep"]].forEach(([k,o])=>{const v=nn(A.xo[k]);if(v>0)fo[o]=Math.min(1,v/100)});if(Object.keys(fo).length)pd.followOn=fo}
   if(E2)pd.estimate={lines:E2.lines,cons:E2.cons,fac:E2.fac,rec:E2.rec,pass:E2.pass,pm:E2.pm,grand:E2.grand};
   if(r){pd.calc={L:r.L,gs:r.gs.map(g=>({name:g.name,net:g.net,pn:g.pn,sh:num(g.sh),distinct:g.distinct,ppd:g.used,days:g.days,rr:num(g.rr),it:num(g.it),tr:num(g.tr),sun:g.sun})),
