@@ -64,6 +64,7 @@ details summary{cursor:pointer;color:var(--purple);font-weight:600}
   </div>
   <div style="display:grid;gap:8px"><span class="lab">Other deliverables (range = small to large scope)</span><div class="chips" id="dlv"></div></div>
   <div class="grid"><div class="f"><label for="sender">Your name (email sign-off)</label><input id="sender" placeholder="Name"></div></div>
+  <div><button class="btn ghost" id="clearBp" type="button">Clear form</button></div>
 </section>
 
 <section class="card" aria-labelledby="h-out">
@@ -315,6 +316,7 @@ byId("copy").onclick = async () => {
   setTimeout(() => m.textContent = "", 4000);
 };
 renderGroups(); renderDL(); render();
+byId("clearBp").onclick = () => { if (!confirm("Clear everything on this page (user groups, deliverables, options and your name)?")) return; try { localStorage.removeItem(KEY2); } catch (e) {} location.reload(); };
 </script>
 
 </body></html>
