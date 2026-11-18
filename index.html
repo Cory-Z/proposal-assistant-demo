@@ -563,6 +563,7 @@
       </label>
       <div style="display:flex; gap:10px;">
         <button type="submit" class="primary-btn" id="schedule-submit-btn">Add to my schedule</button>
+        <button type="button" class="quiz-option-btn" id="schedule-clear-btn">Clear form</button>
         <button type="button" class="quiz-option-btn" id="schedule-cancel-edit-btn" hidden>Cancel edit</button>
       </div>
     </form>
@@ -585,5 +586,8 @@
   <script src="rates.js"></script>
   <script src="app.js"></script>
      <script src="tron-easter-egg.js" defer></script>
+<script>
+document.getElementById("schedule-clear-btn").addEventListener("click",function(){var c=document.getElementById("schedule-cancel-edit-btn");if(c&&!c.hidden){c.click();return}document.getElementById("schedule-entry-form").reset()});
+</script>
 </body>
 </html>
