@@ -56,12 +56,14 @@ details summary{cursor:pointer;color:var(--purple);font-weight:600}
     <div class="f"><label for="rec">Recruitment</label><select id="rec"><option value="Acme HF">Acme HF recruits</option><option value="Client">Client recruits</option></select></div>
     <div class="f"><label for="pilot">Pilot</label><select id="pilot"><option>No</option><option>Yes</option></select></div>
     <div class="f"><label for="irb">IRB</label><select id="irb"><option>None</option><option>Expedited</option><option value="Full Convened">Full convened</option></select></div>
+    <div class="f"><label for="mode">Show prices as</label><select id="mode"><option value="range">Range (low to high)</option><option value="single">Single price (high end)</option></select></div>
   </div>
   <div id="grpBox" style="display:grid;gap:8px">
     <span class="lab">User groups</span>
     <div class="tbl"><table class="gt"><thead><tr><th>Participant type</th><th>Participants needed</th><th>Up to (optional)</th><th>Session length (hrs)</th><th></th></tr></thead><tbody id="grows"></tbody></table></div>
     <div><button class="btn ghost" id="addg" type="button">Add user group</button></div>
   </div>
+  <div id="xsBox" style="display:grid;gap:8px"><span class="lab">Additional studies (optional): each study gets its own set of seven rows; onboarding is split 75% / 25% and project management is priced per study</span><div id="xsList" style="display:grid;gap:10px"></div><div><button class="btn ghost" id="addStudy" type="button">Add another study</button></div></div>
   <div style="display:grid;gap:8px"><span class="lab">Other deliverables (range = small to large scope)</span><div class="chips" id="dlv"></div></div>
   <div class="grid"><div class="f"><label for="sender">Your name (email sign-off)</label><input id="sender" placeholder="Name"></div></div>
   <div><button class="btn ghost" id="clearBp" type="button">Clear form</button></div>
@@ -219,67 +221,97 @@ function compute(){
 const TYPES = {"Patients / lay users":{rr:120,it:60,tr:40},"Caregivers":{rr:120,it:60,tr:40},"Nurses / HCPs":{rr:200,it:80,tr:80},"Pharmacists / technicians":{rr:200,it:80,tr:80},"Physicians / surgeons":{rr:400,it:320,tr:80}};
 const DL = [{"id": "URRA_D", "label": "Use-Related Risk Analysis development", "note": "URRA of up to 50\u2013250 rows", "ff": [14000, 20800, 28000]}, {"id": "URRA_R", "label": "Use-Related Risk Analysis review", "note": "review of the Client URRA, up to 50\u2013250 rows", "ff": [4200, 8200, 12200]}, {"id": "USPEC", "label": "Use Specification", "note": "user profiles and use environments", "ff": [6200, 9400, 14000]}, {"id": "IFU", "label": "Instructions for Use expert review & development", "note": "expert review and development of the existing IFU", "ff": [9400, 15600, 23400]}, {"id": "HEUR", "label": "Heuristic analysis & expert UI review", "note": "expert review of the user interface", "ff": [3200, 6200, 9400]}, {"id": "TRAIN", "label": "Minimum viable commercial training", "note": "training checklist and presentation", "ff": [6400, 11000, 15600]}, {"id": "PRESUB_D", "label": "HF validation study documents for FDA Pre-Sub", "note": "validation protocol for the Pre-Submission", "ff": [6400, 7200, 8000]}, {"id": "PRESUB_M", "label": "FDA Pre-Submission meeting support", "note": "slides, remote meeting attendance, minutes", "ff": [7800, 12600, 19800]}, {"id": "HFE", "label": "HFE submission report", "note": "Sections 1\u20138 per FDA Human Factors guidance", "ff": [25200, 40800, 62400]}, {"id": "SOP_FDA", "label": "FDA-compliant HF SOP", "note": "human factors / usability engineering process", "ff": [3200, 4800, 6200]}, {"id": "SOP_IEC", "label": "HF SOP for IEC 62366-1", "note": "IEC 62366-1 process compliance documentation", "ff": [7800, 12400, 18600]}, {"id": "UEF", "label": "IEC 62366-1 Usability Engineering File", "note": "compliance documentation and usability engineering file", "ff": [9400, 15800, 21800]}, {"id": "GAP", "label": "EU MDR / IEC 62366-1 gap analysis", "note": "gap analysis of usability engineering documentation", "ff": [5000, 7400, 10000]}, {"id": "UIEP", "label": "User Interface Evaluation Plan", "note": "formative and/or summative evaluation plan", "ff": [7800, 12400, 18600]}];
 const KEY2 = "cm_ballpark_v1";
-let G = [{t:"Nurses / HCPs", n:12, sh:"1"}, {t:"Patients / lay users", n:10, sh:"1.5"}], SEL = new Set(), SENDER = "";
-try { const j = JSON.parse(localStorage.getItem(KEY2) || "null"); if (j){ G = j.G || G; SEL = new Set(j.SEL || []); SENDER = j.SENDER || ""; ["study","site","rec","pilot","irb"].forEach(k => { if (j[k] !== undefined) document.getElementById(k).value = j[k]; }); } } catch (e) {}
+let G = [{t:"Nurses / HCPs", n:12, sh:"1"}, {t:"Patients / lay users", n:10, sh:"1.5"}], SEL = new Set(), SENDER = "", X = [], MODE = "range";
+try { const j = JSON.parse(localStorage.getItem(KEY2) || "null"); if (j){ G = j.G || G; SEL = new Set(j.SEL || []); SENDER = j.SENDER || ""; X = j.X || []; MODE = j.MODE || "range"; ["study","site","rec","pilot","irb"].forEach(k => { if (j[k] !== undefined) document.getElementById(k).value = j[k]; }); } } catch (e) {}
 const byId = id => document.getElementById(id);
 const k$ = v => "$" + Math.round(v).toLocaleString("en-US");
 const lo = v => Math.floor(v / 1000) * 1000, hi = v => Math.ceil(v / 1000) * 1000;
-const rng = (a, b) => a === b ? k$(lo(a)) : `${k$(lo(a))} \u2013 ${k$(hi(b))}`;
-function save(){ try { localStorage.setItem(KEY2, JSON.stringify({G, SEL:[...SEL], SENDER, study:byId("study").value, site:byId("site").value, rec:byId("rec").value, pilot:byId("pilot").value, irb:byId("irb").value})); } catch (e) {} }
+const rng = (a, b) => MODE === "single" ? k$(hi(b)) : (a === b ? k$(lo(a)) : `${k$(lo(a))} \u2013 ${k$(hi(b))}`);
+function save(){ try { localStorage.setItem(KEY2, JSON.stringify({G, X, MODE, SEL:[...SEL], SENDER, study:byId("study").value, site:byId("site").value, rec:byId("rec").value, pilot:byId("pilot").value, irb:byId("irb").value})); } catch (e) {} }
 const nFor = (g, high) => high && +g.nMax > +g.n ? +g.nMax : +g.n;
 const nTxt = g => +g.nMax > +g.n ? `${g.n}\u2013${g.nMax}` : `${g.n}`;
-function runCalc(high){
+const curCfg = () => ({study: byId("study").value, site: byId("site").value, rec: byId("rec").value, pilot: byId("pilot").value, irb: byId("irb").value, G});
+function runCalc(high, c){
   S = structuredClone(EXAMPLE); RT = {...RATES_DEFAULT}; RPR = structuredClone(RPR_DEFAULT); TIER = structuredClone(TIER_DEFAULT);
-  const clientRec = byId("rec").value === "Client";
-  Object.assign(S, {studyType: byId("study").value, breakMin: high ? 30 : 15, scrDraft: high ? "Poor or no client draft" : "Solid client draft", protoCx: high ? 1.25 : 1, buffer: high ? 10 : 0,
-    facHrs: high ? 8 : 6, rpCrit: high ? "Many" : "Few", rpUE: high ? "Standard" : "Few", irb: byId("irb").value, studySite: byId("site").value, pilot: byId("pilot").value, pilotUpdHrs: 2,
+  const clientRec = c.rec === "Client";
+  Object.assign(S, {studyType: c.study, breakMin: high ? 30 : 15, scrDraft: high ? "Poor or no client draft" : "Solid client draft", protoCx: high ? 1.25 : 1, buffer: high ? 10 : 0,
+    facHrs: high ? 8 : 6, rpCrit: high ? "Many" : "Few", rpUE: high ? "Standard" : "Few", irb: c.irb, studySite: c.site, pilot: c.pilot, pilotUpdHrs: 2,
     initFee: clientRec ? 0 : 2400, misc: high ? 1600 : 800, camera: 1, travDays: 0, travTime: 0, pmPct: 15});
-  S.groups = G.filter(g => +g.n > 0).map(g => { const r = TYPES[g.t] || TYPES["Patients / lay users"]; return {name: g.t, n: nFor(g, high), sh: +g.sh || 1, distinct: "Yes", rr: clientRec ? 0 : r.rr, it: clientRec ? 0 : r.it, tr: clientRec ? 0 : (high ? r.tr : 0), sun: "No", ppd: ""}; });
+  S.groups = c.G.filter(g => +g.n > 0).map(g => { const r = TYPES[g.t] || TYPES["Patients / lay users"]; return {name: g.t, n: nFor(g, high), sh: +g.sh || 1, distinct: "Yes", rr: clientRec ? 0 : r.rr, it: clientRec ? 0 : r.it, tr: clientRec ? 0 : (high ? r.tr : 0), sun: "No", ppd: ""}; });
   S.pilotGroups = S.groups.map(g => ({name: g.name, n: S.pilot === "Yes" ? 1 : "", sh: g.sh, rr: g.rr, it: g.it, tr: g.tr, sun: "No", ppd: ""}));
   return compute();
 }
-function build(){
-  const studyOn = byId("study").value && G.some(g => +g.n > 0);
-  const rows = []; let consL = 0, consH = 0, totL = 0, totH = 0;
-  let r0 = null, r1 = null;
+const ONB_SPLIT = [0.75, 0.25];
+/* One study's seven rows. idx/multi: with several studies onboarding is split 75% / 25% and project management is priced per study. */
+function studyBlock(c, idx, multi, withOthers){
+  const rows = []; let consL = 0, consH = 0, totL = 0, totH = 0, closeL = 0, closeH = 0;
+  const studyOn = c.study && c.G.some(g => +g.n > 0);
   if (studyOn){
-    r0 = runCalc(false); r1 = runCalc(true);
+    const r0 = runCalc(false, c), r1 = runCalc(true, c);
     const b = (r, keys) => keys.reduce((a, k) => a + (r.L[k] || 0), 0);
-    const pax = r1.pax, days0 = r0.calDays, days1 = r1.calDays, gtxt = G.filter(g => +g.n > 0).map(g => `${nTxt(g)} ${g.t.split(" /")[0].toLowerCase()}`).join(", ");
+    const pct = multi ? ONB_SPLIT[idx === 0 ? 0 : 1] : 1, onb = r => multi ? Math.round((r.L.onb || 0) * pct / 250) * 250 : (r.L.onb || 0);
+    const prepK = ["hf","scr","irb","prep"];
+    const pax = r1.pax, days0 = r0.calDays, days1 = r1.calDays, gtxt = c.G.filter(g => +g.n > 0).map(g => `${nTxt(g)} ${g.t.split(" /")[0].toLowerCase()}`).join(", ");
     const add = (name, note, a, z, cons) => { rows.push({name, note, a, z}); totL += a; totH += z; if (cons){ consL += a; consH += z; } };
-    add("Study Preparation", "consultant onboarding, protocol, recruitment screeners, discussion guide, data collection sheets, plan study schedule", b(r0,["onb","hf","scr","irb","prep"]), b(r1,["onb","hf","scr","irb","prep"]), true);
+    add("Study Preparation", multi && idx > 0 ? "consultant onboarding (shared with the first study), protocol, recruitment screeners, discussion guide, data collection sheets, plan study schedule" : "consultant onboarding, protocol, recruitment screeners, discussion guide, data collection sheets, plan study schedule", b(r0,prepK) + onb(r0), b(r1,prepK) + onb(r1), true);
     if (r1.rec > 0) add("Participant Recruitment", `recruitment start-up and per-recruit costs for up to ${pax} participants (${gtxt} needed, plus 20% over-recruit)`, r0.rec, r1.rec, false);
-    add("Study Conduct", `${days0 === days1 ? days0 : days0 + "\u2013" + days1} study days with a Acme HF Moderator and Observer${byId("pilot").value === "Yes" ? ", plus pilot sessions" : ""}`, b(r0,["conduct","pilot","cog"]), b(r1,["conduct","pilot","cog"]), true);
+    add("Study Conduct", `${days0 === days1 ? days0 : days0 + "–" + days1} study days with a Acme HF Moderator and Observer${c.pilot === "Yes" ? ", plus pilot sessions" : ""}`, b(r0,["conduct","pilot","cog"]), b(r1,["conduct","pilot","cog"]), true);
     const facA = r0.L.facility + r0.L.train, facZ = r1.L.facility + r1.L.train;
-    add(byId("site").value === "Acme HF facility" ? "Study Facility Rental & Facilitator" : "Study Facilitator", (byId("site").value === "Acme HF facility" ? "facility rental plus " : "") + "reduced-rate host coordinating sessions and communicating with participants", facA + r0.L.facil, facZ + r1.L.facil, false);
-    rows[rows.length-1].consA = r0.L.facil; rows[rows.length-1].consZ = r1.L.facil; consL += r0.L.facil; consH += r1.L.facil;
+    add(c.site === "Acme HF facility" ? "Study Facility Rental & Facilitator" : "Study Facilitator", (c.site === "Acme HF facility" ? "facility rental plus " : "") + "reduced-rate host coordinating sessions and communicating with participants", facA + r0.L.facil, facZ + r1.L.facil, false);
+    consL += r0.L.facil; consH += r1.L.facil;
     add("Data Analysis & Reporting", "review of videos if necessary, database finalization, 2 drafts and final report", b(r0,["analysis","report","qs"]), b(r1,["analysis","report","qs"]), true);
     if (r1.pass > 0) add("Pass-Through Expenses", `miscellaneous study expenses/purchases and participant incentives for up to ${pax} participants`, r0.pass, r1.pass, false);
-    consL += r0.L.close; consH += r1.L.close;
-    rows.closeL = r0.L.close; rows.closeH = r1.L.close;
+    consL += r0.L.close; consH += r1.L.close; closeL = r0.L.close; closeH = r1.L.close;
   }
-  for (const id of SEL){ const d = DL.find(x => x.id === id); if (!d) continue;
-    const a = d.ff[0], z = d.ff[2]; rows.push({name: d.label, note: d.note, a, z}); totL += a; totH += z; consL += a; consH += z; }
-  if (!studyOn && SEL.size){ rows.unshift({name:"Onboarding", note:"kickoff meeting(s), product demonstration and document review", a:2400, z:2400}); totL += 2400; totH += 2400; consL += 3000; consH += 3000; }
+  if (withOthers){
+    for (const id of SEL){ const d = DL.find(x => x.id === id); if (!d) continue;
+      const a = d.ff[0], z = d.ff[2]; rows.push({name: d.label, note: d.note, a, z}); totL += a; totH += z; consL += a; consH += z; }
+    if (!studyOn && SEL.size){ rows.unshift({name:"Onboarding", note:"kickoff meeting(s), product demonstration and document review", a:2400, z:2400}); totL += 2400; totH += 2400; consL += 3000; consH += 3000; }
+  }
   if (rows.length){
-    const pmL = Math.max(4000, Math.round(consL * 0.15 / 500) * 500) + (rows.closeL || 0), pmH = Math.max(4000, Math.round(consH * 0.15 / 500) * 500) + (rows.closeH || 0);
+    const pmL = Math.max(4000, Math.round(consL * 0.15 / 500) * 500) + closeL, pmH = Math.max(4000, Math.round(consH * 0.15 / 500) * 500) + closeH;
     rows.push({name:"Project Management", note:"including weekly client calls & meetings, email correspondence & advisory, budget reviews, resource management, etc.", a:pmL, z:pmH}); totL += pmL; totH += pmH;
   }
   return {rows, totL, totH};
 }
+function build(){
+  const all = [curCfg(), ...X].filter(c => c.study && c.G.some(g => +g.n > 0));
+  const multi = all.length > 1, blocks = [];
+  if (!multi) blocks.push(Object.assign(studyBlock(all[0] || {study:"", G:[]}, 0, false, true), {title: null}));
+  else {
+    all.forEach((c, i) => blocks.push(Object.assign(studyBlock(c, i, true, false), {title: `Study ${i + 1}: ${c.study}`})));
+    if (SEL.size) blocks.push(Object.assign(studyBlock({study:"", G:[]}, 0, true, true), {title: "Other deliverables"}));
+  }
+  const rows = blocks.flatMap(b => b.rows);
+  return {blocks, rows, multi, totL: blocks.reduce((a, b) => a + b.totL, 0), totH: blocks.reduce((a, b) => a + b.totH, 0)};
+}
+const WORD = () => MODE === "single" ? "estimate" : "range";
 function tableHTML(res){
   const th = s => `<th style="background:#196972;color:#fff;text-align:left;padding:6px 10px;font:700 13px Arial,sans-serif;border:1px solid #196972">${s}</th>`;
   const td = (s, x="") => `<td style="padding:6px 10px;border:1px solid #C6CFD6;font:13px Arial,sans-serif;color:#16222B;vertical-align:top;${x}">${s}</td>`;
-  let h = `<table style="border-collapse:collapse;max-width:760px;width:100%"><thead><tr>${th("Deliverable")}${th("Estimated Cost")}</tr></thead><tbody>`;
-  for (const r of res.rows) h += `<tr>${td(`<b>${esc(r.name)}</b><br><span style="color:#5A6872">(${esc(r.note)})</span>`)}${td(rng(r.a, r.z), "white-space:nowrap")}</tr>`;
-  h += `<tr>${td("<b>Total</b>", "text-align:right;background:#E9F5F6")}${td(`<b>${rng(res.totL, res.totH)}</b>`, "white-space:nowrap;background:#E9F5F6")}</tr></tbody></table>`;
-  h += `<p style="font:12px Arial,sans-serif;color:#5A6872;max-width:760px">This is a preliminary range based on our current understanding of the project. A detailed proposal will confirm the scope and pricing.</p>`;
+  let h = "";
+  for (const bl of res.blocks){
+    if (!bl.rows.length) continue;
+    if (bl.title) h += `<p style="font:700 14px Arial,sans-serif;color:#0C273A;margin:14px 0 4px">${esc(bl.title)}</p>`;
+    h += `<table style="border-collapse:collapse;max-width:760px;width:100%"><thead><tr>${th("Deliverable")}${th("Estimated Cost")}</tr></thead><tbody>`;
+    for (const r of bl.rows) h += `<tr>${td(`<b>${esc(r.name)}</b><br><span style="color:#5A6872">(${esc(r.note)})</span>`)}${td(rng(r.a, r.z), "white-space:nowrap")}</tr>`;
+    h += `<tr>${td(`<b>${res.multi ? esc(bl.title || "Total") + " total" : "Total"}</b>`, "text-align:right;background:#E9F5F6")}${td(`<b>${rng(bl.totL, bl.totH)}</b>`, "white-space:nowrap;background:#E9F5F6")}</tr></tbody></table>`;
+  }
+  if (res.multi) h += `<p style="font:700 14px Arial,sans-serif;color:#0C273A;margin:14px 0 4px">Overall estimated total: ${rng(res.totL, res.totH)}</p>`;
+  h += `<p style="font:12px Arial,sans-serif;color:#5A6872;max-width:760px">This is a preliminary ${WORD()} based on our current understanding of the project. A detailed proposal will confirm the scope and pricing.</p>`;
   if (SENDER) h += `<p style="font:13px Arial,sans-serif;color:#16222B">Best,<br>${esc(SENDER)}</p>`;
   return h;
 }
 function textVersion(res){
-  const L = res.rows.map(r => `${r.name} (${r.note}): ${rng(r.a, r.z)}`);
-  L.push(`Total: ${rng(res.totL, res.totH)}`, "", "This is a preliminary range based on our current understanding of the project. A detailed proposal will confirm the scope and pricing.");
+  const L = [];
+  for (const bl of res.blocks){
+    if (!bl.rows.length) continue;
+    if (bl.title) L.push(bl.title);
+    bl.rows.forEach(r => L.push(`${r.name} (${r.note}): ${rng(r.a, r.z)}`));
+    L.push(`${res.multi ? (bl.title || "Total") + " total" : "Total"}: ${rng(bl.totL, bl.totH)}`, "");
+  }
+  if (res.multi) L.push(`Overall estimated total: ${rng(res.totL, res.totH)}`, "");
+  L.push(`This is a preliminary ${WORD()} based on our current understanding of the project. A detailed proposal will confirm the scope and pricing.`);
   if (SENDER) L.push("", "Best,", SENDER);
   return L.join("\n");
 }
@@ -293,11 +325,42 @@ function renderGroups(){
 }
 function renderDL(){ byId("dlv").innerHTML = DL.map(d => `<label><input type="checkbox" data-d="${d.id}" ${SEL.has(d.id) ? "checked" : ""}> ${esc(d.label)}</label>`).join(""); }
 function render(){
-  byId("grpBox").hidden = !byId("study").value; byId("sender").value = SENDER;
+  byId("grpBox").hidden = !byId("study").value; byId("xsBox").hidden = !byId("study").value; byId("mode").value = MODE; byId("sender").value = SENDER;
   RES = build();
   byId("out").innerHTML = RES.rows.length ? tableHTML(RES) : `<p style="color:#5A6872;margin:0">Choose a study type or at least one deliverable to see a range.</p>`;
   save();
 }
+
+const SESS = ["0.5","1","1.5","2","2.5","3","3.5","4"], STY = ["Early Formative","Later Formative","Validation / Summative"];
+const xBlank = () => ({study:"Validation / Summative", site:"Acme HF facility", rec:"Acme HF", pilot:"No", irb:"None", G:[{t:"Patients / lay users", n:8, nMax:"", sh:"1"}]});
+function renderX(){
+  const opt = (arr, v) => arr.map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("");
+  byId("xsList").innerHTML = X.map((x, i) => `<div style="border:1px solid var(--line, #C6CFD6);border-radius:8px;padding:10px;display:grid;gap:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b>Study ${i + 2}</b><button class="btn ghost" type="button" data-xdel="${i}">Remove study</button></div>
+    <div class="grid">
+     <div class="f"><label>Usability study</label><select data-xi="${i}" data-xf="study">${opt(STY, x.study)}</select></div>
+     <div class="f"><label>Study site</label><select data-xi="${i}" data-xf="site"><option value="Acme HF facility"${x.site === "Acme HF facility" ? " selected" : ""}>Acme HF facility</option><option value="Client site"${x.site === "Client site" ? " selected" : ""}>Client / 3rd-party site</option></select></div>
+     <div class="f"><label>Recruitment</label><select data-xi="${i}" data-xf="rec"><option value="Acme HF"${x.rec === "Acme HF" ? " selected" : ""}>Acme HF recruits</option><option value="Client"${x.rec === "Client" ? " selected" : ""}>Client recruits</option></select></div>
+     <div class="f"><label>Pilot</label><select data-xi="${i}" data-xf="pilot">${opt(["No","Yes"], x.pilot)}</select></div>
+     <div class="f"><label>IRB</label><select data-xi="${i}" data-xf="irb"><option${x.irb === "None" ? " selected" : ""}>None</option><option${x.irb === "Expedited" ? " selected" : ""}>Expedited</option><option value="Full Convened"${x.irb === "Full Convened" ? " selected" : ""}>Full convened</option></select></div>
+    </div>
+    <div class="tbl"><table class="gt"><thead><tr><th>Participant type</th><th>Participants needed</th><th>Up to (optional)</th><th>Session length (hrs)</th><th></th></tr></thead><tbody>${x.G.map((g, j) => `<tr>
+      <td><select data-xi="${i}" data-xg="${j}" data-xgf="t">${opt(Object.keys(TYPES), g.t)}</select></td>
+      <td><input type="number" min="0" data-xi="${i}" data-xg="${j}" data-xgf="n" value="${esc(g.n)}"></td>
+      <td><input type="number" min="0" placeholder="same" data-xi="${i}" data-xg="${j}" data-xgf="nMax" value="${esc(g.nMax || "")}"></td>
+      <td><select data-xi="${i}" data-xg="${j}" data-xgf="sh">${opt(SESS, String(g.sh))}</select></td>
+      <td><button class="x" type="button" data-xgdel="${i}:${j}" aria-label="Remove group">&#x2715;</button></td></tr>`).join("")}</tbody></table></div>
+    <div><button class="btn ghost" type="button" data-xgadd="${i}">Add user group</button></div></div>`).join("");
+}
+document.addEventListener("change", e => { const t = e.target;
+  if (t.id === "mode"){ MODE = t.value; return; }
+  if (t.dataset.xi !== undefined){ const x = X[+t.dataset.xi]; if (!x) return;
+    if (t.dataset.xgf){ x.G[+t.dataset.xg][t.dataset.xgf] = t.value; } else if (t.dataset.xf){ x[t.dataset.xf] = t.value; } } });
+document.addEventListener("click", e => { const t = e.target;
+  if (t.id === "addStudy"){ if (X.length >= 4){ byId("msg").textContent = "Up to 5 studies in total."; return; } X.push(xBlank()); renderX(); render(); return; }
+  if (t.dataset && t.dataset.xdel !== undefined){ X.splice(+t.dataset.xdel, 1); renderX(); render(); return; }
+  if (t.dataset && t.dataset.xgadd !== undefined){ X[+t.dataset.xgadd].G.push({t:"Patients / lay users", n:8, nMax:"", sh:"1"}); renderX(); render(); return; }
+  if (t.dataset && t.dataset.xgdel){ const [i, j] = t.dataset.xgdel.split(":").map(Number); X[i].G.splice(j, 1); if (!X[i].G.length) X[i].G.push({t:"Patients / lay users", n:8, nMax:"", sh:"1"}); renderX(); render(); } });
 document.addEventListener("change", e => { const t = e.target;
   if (t.dataset.g !== undefined && t.value === "__other"){ const gi = +t.dataset.g; G[gi]._c = true; renderGroups(); const n = document.querySelector(`input[data-g="${gi}"][data-f="sh"]`); if (n){ n.value = ""; n.focus(); } return; }
   if (t.dataset.g !== undefined){ G[+t.dataset.g][t.dataset.f] = t.value; }
@@ -315,7 +378,7 @@ byId("copy").onclick = async () => {
   catch (_) { const r = document.createRange(); r.selectNode(byId("out")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); m.textContent = "Your browser blocked copying. The table is selected: press Ctrl+C / Cmd+C."; }
   setTimeout(() => m.textContent = "", 4000);
 };
-renderGroups(); renderDL(); render();
+renderGroups(); renderDL(); renderX(); render();
 byId("clearBp").onclick = () => { if (!confirm("Clear everything on this page (user groups, deliverables, options and your name)?")) return; try { localStorage.removeItem(KEY2); } catch (e) {} location.reload(); };
 </script>
 
