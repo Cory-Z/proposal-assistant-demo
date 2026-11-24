@@ -61,7 +61,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .dlh{font:500 .68rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .pv{display:grid;gap:12px}
 .pvh{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-.gwrap{overflow-x:auto;background:#ffffff;border-radius:10px;border:1px solid var(--line);padding:14px}
+.gwrap{position:relative;overflow-x:auto;background:#ffffff;border-radius:10px;border:1px solid var(--line);padding:14px}
 .msgs{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .msgs li{border-radius:8px;padding:8px 12px;font-size:.92rem}
 .msgs li.w{background:var(--warn-bg);color:var(--warn-ink)}
@@ -91,7 +91,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .btn.sm{padding:4px 12px;font-size:.82rem}
 .manual{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--note-bg);color:var(--note-ink);border-radius:8px;padding:8px 12px;font-size:.92rem}
 #gantt td.gc{cursor:crosshair;user-select:none;touch-action:none}
-#gantt.mv td.gc{cursor:default}
+#gantt.mv td.gc{cursor:crosshair}
+.barov{position:absolute;box-sizing:border-box;border:2px solid #F4B782;border-radius:5px;cursor:grab;z-index:3;touch-action:none;background:rgba(244, 183, 130,.10)}
+.barov.sel{border-color:#0C273A;box-shadow:0 0 0 2px #F4B782;background:rgba(244, 183, 130,.22)}
+.barov i{position:absolute;top:-2px;bottom:-2px;width:12px;background:#F4B782;cursor:ew-resize;border-radius:4px;touch-action:none}
+.barov i.gl{left:-6px}.barov i.gr{right:-6px}
+.barov i::after{content:"";position:absolute;left:5px;top:25%;bottom:25%;width:2px;background:#0C273A;border-radius:1px}
+#barPanel{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.85rem}
+#barPanel[hidden]{display:none}
 #gantt td.gc:hover{outline:2px solid #F4B782;outline-offset:-2px}
 #gantt .rl{display:flex;align-items:center;gap:4px;justify-content:space-between}
 #gantt .rlt{outline:none;border-radius:3px;padding:1px 2px;min-width:40px;cursor:text}
@@ -191,16 +198,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div class="tbar">
     <div class="tg"><span class="tgh" id="tg-cell">Cell Editing</span>
     <div class="seg" role="group" aria-labelledby="tg-cell">
-      <button type="button" data-brush="bar" title="Scheduled work"><i class="sw" style="background:#196972"></i>Purple</button><button type="button" data-brush="review" title="Client review"><i class="sw" style="background:#B3DBE0"></i>Light purple</button><button type="button" data-brush="erase" title="Clear cells back to gray"><i class="sw" style="background:#E6EAEC;border-color:#B6C0C8"></i>Erase</button><button type="button" data-brush="text">Edit cell text</button><button type="button" data-brush="move" title="Drag a bar to move it; drag its left or right edge to shorten or lengthen it; drag across empty cells to draw a bar">Move / resize bars</button>
+      <button type="button" data-brush="bar" title="Scheduled work"><i class="sw" style="background:#196972"></i>Purple</button><button type="button" data-brush="review" title="Client review"><i class="sw" style="background:#B3DBE0"></i>Light purple</button><button type="button" data-brush="erase" title="Clear cells back to gray"><i class="sw" style="background:#E6EAEC;border-color:#B6C0C8"></i>Erase</button><button type="button" data-brush="text">Edit cell text</button><button type="button" data-brush="move" title="Each bar gets a frame with pink grips: drag a grip to lengthen or shorten, drag the frame to move, or click a bar and use the buttons. Drag across empty cells to draw a bar.">Move / resize bars</button>
     </div></div>
     <div class="tg"><span class="tgh" id="tg-table">Table Editing</span>
     <div style="display:flex;gap:6px;flex-wrap:wrap" role="group" aria-labelledby="tg-table">
       <button class="btn ghost sm" id="addRow" type="button">+ Row</button><button class="btn ghost sm" id="addWeek" type="button">+ Week</button><button class="btn ghost sm" id="delWeek" type="button">&#x2212; Week</button><button class="btn ghost sm" id="undo" type="button">Undo</button>
     </div></div>
   </div>
-  <p class="h" style="margin:0;font-size:.85rem;color:var(--muted)">Edit the table directly: pick a color (purple = scheduled work, light purple = client review) and click or drag across weeks in a row. Use Edit cell text (or double-click a cell) to type text (milestones like "Deliver Draft Report"). Use Move / resize bars to drag a bar sideways, or drag its left or right edge to shorten or lengthen it (nothing else in the row is deleted). In that mode, dragging across empty cells draws a purple bar. Click a row name to rename it; use &#x25b2; &#x25bc; &#x2715; to move or delete rows.</p>
+  <p class="h" style="margin:0;font-size:.85rem;color:var(--muted)">Edit the table directly: pick a color (purple = scheduled work, light purple = client review) and click or drag across weeks in a row. Use Edit cell text (or double-click a cell) to type text (milestones like "Deliver Draft Report"). Use Move / resize bars: every bar gets a frame with pink grips. Drag a grip to lengthen or shorten the bar, drag the frame to move it, or click a bar and use the buttons that appear above the table (nothing else in the row is deleted). In that mode, dragging across empty cells draws a purple bar. Click a row name to rename it; use &#x25b2; &#x25bc; &#x2715; to move or delete rows.</p>
   <div class="manual" id="manualBar" hidden><span>Edited by hand. Changes to the inputs above no longer update the table.</span><button class="btn ghost sm" id="rebuild" type="button">Rebuild from inputs</button></div>
   <ul class="msgs" id="msgs"></ul>
+  <div id="barPanel" hidden></div>
   <div class="gwrap" id="gantt"></div>
   <div class="legend"><span><i style="background:#196972"></i>Purple: scheduled work</span><span><i style="background:#B3DBE0"></i>Light purple: client review</span><span><i style="background:#E6EAEC;border:1px solid #C6CFD6"></i>Not scheduled</span></div>
 </section>
@@ -564,6 +572,7 @@ function render(){
     (G.weeks > 20 ? `<li class="n">This is a long timeline (${G.weeks} weeks). If the export looks cramped, choose "Month" in "Export columns by" above the table.</li>` : "") +
     (wi.hol.length ? `<li class="n">Holidays in this period (\u25cf in the header): ${esc(wi.hol.map(h => `${h.name} ${fmtD(new Date(h.date+"T00:00:00Z"))}`).join(", "))}</li>` : "");
   $("sum").value = summaryText(G);
+  drawOverlays();
   save();
 }
 /* ---- direct table editing ---- */
@@ -621,8 +630,7 @@ document.addEventListener("pointerdown", e => {
   if (BRUSH === "move"){ e.preventDefault(); const z = moveZone(td, e);
     if (!z){ snapshot(); ensureManual(); const r0 = +td.dataset.r, w0 = +td.dataset.w;   // empty cell: drag across weeks to draw a purple bar
       MOVE = {r: r0, mode: "draw", w0, last: w0, base: JSON.parse(JSON.stringify(st.manual.rows[r0].cells))}; moveApply(w0); render(); return; }
-    snapshot(); ensureManual();
-    MOVE = {r: +td.dataset.r, mode: z.mode, run: z.run, w0: +td.dataset.w, last: +td.dataset.w, base: JSON.parse(JSON.stringify(st.manual.rows[+td.dataset.r].cells))}; return; }
+    return; }
   if (BRUSH === "text"){ e.preventDefault(); editText(td); return; }
   e.preventDefault(); snapshot();
   PAINT = {r: +td.dataset.r}; applyBrush(PAINT.r, +td.dataset.w); render();
@@ -630,11 +638,85 @@ document.addEventListener("pointerdown", e => {
 document.addEventListener("pointermove", e => {
   if (MOVE){ const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest && el.closest("td.gc");
     if (td && +td.dataset.r === MOVE.r && +td.dataset.w !== MOVE.last){ MOVE.last = +td.dataset.w; moveApply(MOVE.last); render(); } return; }
-  if (BRUSH === "move" && !PAINT){ const el = e.target.closest && e.target.closest("td.gc"); if (el && gantt().contains(el)){ const z = moveZone(el, e); el.style.cursor = !z ? "crosshair" : z.mode === "move" ? "grab" : "ew-resize"; } return; }
+  if (BRUSH === "move" && !PAINT) return;
   if (!PAINT) return;
   const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest && el.closest("td.gc");
   if (td && +td.dataset.r === PAINT.r){ const w = +td.dataset.w, c = G.rows[PAINT.r].cells[w];
     if ((BRUSH === "erase" && (c.k || c.t)) || (BRUSH !== "erase" && c.k !== BRUSH)){ applyBrush(PAINT.r, w); render(); } }
+});
+
+/* ---- Move / resize bars (v17.9, rebuilt): every bar gets a visible frame with grips. Drag a grip to lengthen or shorten, drag the frame to move it,
+   or click a bar and use the buttons above the table. The table is redrawn only when you let go, so the drag cannot get lost. ---- */
+let SELBAR = null;
+const barLimits = (cells, run) => { let lo = 0, hi = cells.length - 1; for (let i = run.s - 1; i >= 0; i--) if (cells[i].k){ lo = i + 1; break; } for (let i = run.e + 1; i < cells.length; i++) if (cells[i].k){ hi = i - 1; break; } return {lo, hi}; };
+function setRun(r, run, s, e){
+  const base = JSON.parse(JSON.stringify(G.rows[r].cells)), cells = base.map(c => ({...c})), blank = () => ({k: "", t: "", b: false});
+  const move = (e - s) === (run.e - run.s) && s !== run.s;
+  for (let i = run.s; i <= run.e; i++) cells[i] = blank();
+  for (let i = s; i <= e; i++){
+    if (move) cells[i] = {...base[run.s + (i - s)]};
+    else cells[i] = (i >= run.s && i <= run.e) ? {...base[i]} : {k: run.k, t: base[i].t || "", b: !!base[i].b};
+  }
+  if (!move){ const f = base[run.s]; if (f.t && !f.b){ if (run.s !== s) cells[run.s].t = ""; cells[s].t = f.t; cells[s].b = false; } }
+  snapshot(); ensureManual().rows[r].cells = cells;
+}
+function calcRun(mode, run, lim, d){
+  let s = run.s, e = run.e, len = e - s;
+  if (mode === "move"){ const sh = Math.max(lim.lo - s, Math.min(lim.hi - e, d)); s += sh; e += sh; }
+  else if (mode === "right") e = Math.max(s, Math.min(lim.hi, e + d));
+  else s = Math.min(e, Math.max(lim.lo, s + d));
+  return {s, e};
+}
+function drawOverlays(){
+  const g = gantt(); g.querySelectorAll(".barov").forEach(x => x.remove());
+  const panel = $("barPanel");
+  if (BRUSH !== "move"){ SELBAR = null; panel.hidden = true; return; }
+  const wr = g.getBoundingClientRect(); let selFound = false;
+  G.rows.forEach((row, r) => {
+    let w = 0;
+    while (w < row.cells.length){
+      const run = runAt(row.cells, w); if (!run){ w++; continue; } w = run.e + 1;
+      const a = g.querySelector(`td.gc[data-r="${r}"][data-w="${run.s}"]`), b = g.querySelector(`td.gc[data-r="${r}"][data-w="${run.e}"]`); if (!a || !b) continue;
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(), el = document.createElement("div");
+      const sel = SELBAR && SELBAR.r === r && SELBAR.s === run.s; if (sel){ selFound = true; SELBAR.e = run.e; }
+      el.className = "barov" + (sel ? " sel" : ""); el.dataset.r = r; el.dataset.s = run.s; el.dataset.e = run.e; el.dataset.k = run.k;
+      el.style.cssText = `left:${ra.left - wr.left - g.clientLeft + g.scrollLeft}px;top:${ra.top - wr.top - g.clientTop}px;width:${rb.right - ra.left}px;height:${ra.height}px`;
+      el.title = "Drag the frame to move, drag a grip to lengthen or shorten. Click to select.";
+      el.innerHTML = '<i class="gl"></i><i class="gr"></i>'; g.appendChild(el);
+    }
+  });
+  if (!selFound) SELBAR = null;
+  if (!SELBAR){ panel.hidden = false; panel.innerHTML = '<span>Move / resize bars: drag a bar\'s frame to move it, drag a pink grip to lengthen or shorten it, or click a bar to use buttons here. Drag across empty cells to draw a new bar.</span>'; return; }
+  const row = G.rows[SELBAR.r]; panel.hidden = false;
+  panel.innerHTML = `<b>${esc(row.label)}</b><span>weeks ${SELBAR.s + 1} to ${SELBAR.e + 1}</span>` +
+    [["move",-1,"◀ Move"],["move",1,"Move ▶"],["left",-1,"Start earlier"],["left",1,"Start later"],["right",-1,"End earlier"],["right",1,"End later"]].map(([m, d, t]) => `<button type="button" class="btn ghost sm" data-bar="${m}:${d}">${t}</button>`).join("") +
+    '<button type="button" class="btn ghost sm" data-bar="del">Delete bar</button><button type="button" class="btn ghost sm" data-bar="done">Done</button>';
+}
+document.addEventListener("pointerdown", e => {
+  const ov = e.target.closest && e.target.closest(".barov"); if (!ov || BRUSH !== "move") return;
+  e.preventDefault(); e.stopPropagation();
+  const r = +ov.dataset.r, run = {s: +ov.dataset.s, e: +ov.dataset.e, k: ov.dataset.k}, cells = G.rows[r].cells, lim = barLimits(cells, run);
+  const cols = [...gantt().querySelectorAll(`td.gc[data-r="${r}"]`)].map(td => td.getBoundingClientRect());
+  const colAt = x => { let best = 0; for (let i = 0; i < cols.length; i++){ if (x >= cols[i].left) best = i; } return best; };
+  const mode = e.target.classList.contains("gl") ? "left" : e.target.classList.contains("gr") ? "right" : "move";
+  const w0 = colAt(e.clientX), wr = gantt().getBoundingClientRect(), g = gantt();
+  let cur = {s: run.s, e: run.e}, moved = false;
+  try { ov.setPointerCapture(e.pointerId); } catch (_) {}
+  const place = () => { const a = cols[cur.s], b = cols[cur.e]; ov.style.left = (a.left - wr.left - g.clientLeft + g.scrollLeft) + "px"; ov.style.width = (b.right - a.left) + "px"; };
+  const mv = ev => { const d = colAt(ev.clientX) - w0; const n = calcRun(mode, run, lim, d); if (n.s !== cur.s || n.e !== cur.e){ cur = n; moved = true; place(); } };
+  const up = () => {
+    ov.removeEventListener("pointermove", mv); ov.removeEventListener("pointerup", up); ov.removeEventListener("pointercancel", up);
+    if (moved){ setRun(r, run, cur.s, cur.e); SELBAR = {r, s: cur.s, e: cur.e}; } else SELBAR = {r, s: run.s, e: run.e};
+    render(); };
+  ov.addEventListener("pointermove", mv); ov.addEventListener("pointerup", up); ov.addEventListener("pointercancel", up);
+}, true);
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-bar]"); if (!b || !SELBAR) return;
+  const act = b.dataset.bar, r = SELBAR.r, cells = G.rows[r].cells, run = runAt(cells, SELBAR.s); if (!run) { SELBAR = null; render(); return; }
+  if (act === "done"){ SELBAR = null; render(); return; }
+  if (act === "del"){ snapshot(); const m = ensureManual(); for (let i = run.s; i <= run.e; i++) m.rows[r].cells[i] = {k: "", t: "", b: false}; SELBAR = null; render(); return; }
+  const [mode, d] = act.split(":"), n = calcRun(mode, run, barLimits(cells, run), +d);
+  if (n.s !== run.s || n.e !== run.e){ setRun(r, run, n.s, n.e); SELBAR = {r, s: n.s, e: n.e}; render(); }
 });
 document.addEventListener("pointerup", () => { PAINT = null; MOVE = null; });
 document.addEventListener("dblclick", e => { const td = e.target.closest("td.gc"); if (td && gantt().contains(td)) editText(td); });
