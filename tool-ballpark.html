@@ -266,7 +266,7 @@ function studyBlock(c, idx, multi, withOthers){
   if (withOthers){
     for (const id of SEL){ const d = DL.find(x => x.id === id); if (!d) continue;
       const a = d.ff[0], z = d.ff[2]; rows.push({name: d.label, note: d.note, a, z}); totL += a; totH += z; consL += a; consH += z; }
-    if (!studyOn && SEL.size){ rows.unshift({name:"Onboarding", note:"kickoff meeting(s), product demonstration and document review", a:2400, z:2400}); totL += 2400; totH += 2400; consL += 3000; consH += 3000; }
+    if (!studyOn && SEL.size && !multi){ rows.unshift({name:"Onboarding", note:"kickoff meeting(s), product demonstration and document review", a:2400, z:2400}); totL += 2400; totH += 2400; consL += 3000; consH += 3000; }
   }
   if (rows.length){
     const pmL = Math.max(4000, Math.round(consL * 0.15 / 500) * 500) + closeL, pmH = Math.max(4000, Math.round(consH * 0.15 / 500) * 500) + closeH;
